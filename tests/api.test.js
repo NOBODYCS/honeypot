@@ -187,3 +187,125 @@ test('US2: closed month plan is locked (409)', async () => {
     (e) => e instanceof ApiError && e.status === 409
   );
 });
+
+test('US4: expense add/delete with validation, plan-vs-actual, settle-up', async () => {
+  await call('POST', '/api/months', { ym: '2026-03' });
+  const plan = await call('PUT', '/api/months/2026-03/plan', {
+    salaries: { 1: 300000, 2: 100000 },
+    items: [
+      { kind: 'fixed', label: 'Rent', amountCents: 90000 },
+      { kind: 'variable', label: 'Groceries', amountCents: 40000 },
+    ],
+  });
+  const groceryId = plan.body.items.find((i) => i.label === 'Groceries').id;
+
+  const added = await call('POST', '/api/months/2026-03/expenses', {
+    date: '2026-03-05',
+    description: 'Weekly shop',
+    amountCents: 12000,
+    planItemId: groceryId,
+  });
+  assert.equal(added.body.expenses.length, 1);
+  assert.equal(added.body.summary.actualSpent, 12000);
+  assert.equal(added.body.summary.planVsActual[0].actual, 12000);
+  assert.equal(added.body.summary.unplannedTotal, 0);
+
+  const fronted = await call('POST', '/api/months/2026-03/expenses', {
+    date: '2026-03-10',
+    description: 'Concert tickets',
+    amountCents: 8000,
+    payerProfileId: 2,
+  });
+  assert.equal(fronted.body.summary.fronted.B, 8000);
+  assert.equal(fronted.body.summary.settle.A + fronted.body.summary.settle.B, 0);
+  assert.equal(fronted.body.summary.unplannedTotal, 8000);
+
+  await assert.rejects(
+    () => call('POST', '/api/months/2026-03/expenses', { date: '2026-03-01', description: 'X', amountCents: 0 }),
+    (e) => e instanceof ApiError && e.status === 400
+  );
+  await assert.rejects(
+    () => call('POST', '/api/months/2026-03/expenses', { date: '2026-04-01', description: 'X', amountCents: 100 }),
+    (e) => e instanceof ApiError && e.status === 400
+  );
+  await assert.rejects(
+    () => call('POST', '/api/months/2026-03/expenses', { date: '2026-03-01', description: 'X', amountCents: 100, planItemId: 99999 }),
+    (e) => e instanceof ApiError && e.status === 400
+  );
+
+  const del = await call('DELETE', `/api/expenses/${added.body.expenses[0].id}`);
+  assert.equal(del.body.expenses.length, 1);
+  assert.equal(del.body.summary.actualSpent, 8000);
+
+  await call('POST', '/api/months/2026-03/close');
+  await assert.rejects(
+    () => call('POST', '/api/months/2026-03/expenses', { date: '2026-03-02', description: 'X', amountCents: 100 }),
+    (e) => e instanceof ApiError && e.status === 409
+  );
+});
+
+test('US5: close freezes snapshot; no payer means settle null', async () => {
+  await call('POST', '/api/months', { ym: '2026-04' });
+  await call('PUT', '/api/months/2026-04/plan', {
+    salaries: { 1: 200000, 2: 200000 },
+    items: [
+      { kind: 'fixed', label: 'Rent', amountCents: 60000 },
+      { kind: 'personal', label: 'Phone', amountCents: 2000, ownerProfileId: 1, partnerSharePct: 50 },
+    ],
+  });
+  await call('POST', '/api/months/2026-04/expenses', {
+    date: '2026-04-02',
+    description: 'Pot-paid shop',
+    amountCents: 5000,
+  });
+  const closed = await call('POST', '/api/months/2026-04/close');
+  assert.equal(closed.body.status, 'closed');
+  assert.equal(closed.body.summary.settle, null);
+  assert.equal(closed.body.summary.personalSupport.length, 1);
+  const hist = await call('GET', '/api/months/2026-04/history');
+  assert.equal(hist.body.snapshot.settle, null);
+  assert.equal(hist.body.snapshot.potBalance, closed.body.summary.potBalance);
+  assert.equal(hist.body.expenses.length, 1);
+});
+
+test('US7: leftover log editable only on most recently closed month', async () => {
+  await call('POST', '/api/months', { ym: '2026-01' });
+  await call('PUT', '/api/months/2026-01/plan', { salaries: { 1: 100000, 2: 100000 }, items: [] });
+  await call('POST', '/api/months/2026-01/close');
+  await call('POST', '/api/months', { ym: '2026-02' });
+  await call('PUT', '/api/months/2026-02/plan', { salaries: { 1: 100000, 2: 100000 }, items: [] });
+  await call('POST', '/api/months/2026-02/close');
+
+  await assert.rejects(
+    () => call('POST', '/api/months/2026-01/leftovers', { profileId: 1, amountCents: 100, category: 'Savings' }),
+    (e) => e instanceof ApiError && e.status === 409
+  );
+  const added = await call('POST', '/api/months/2026-02/leftovers', {
+    profileId: 1,
+    amountCents: 15000,
+    category: 'Savings',
+    note: 'Emergency fund',
+  });
+  assert.equal(added.body.leftovers.length, 1);
+  const again = await call('POST', '/api/months/2026-02/leftovers', {
+    profileId: 2,
+    amountCents: 5000,
+    category: 'Fun',
+  });
+  const second = again.body.leftovers[1];
+  const deleted = await call('DELETE', `/api/leftovers/${second.id}`);
+  assert.equal(deleted.body.leftovers.length, 1);
+  await assert.rejects(
+    () => call('POST', '/api/months/2026-02/leftovers', { profileId: 1, amountCents: 0, category: 'X' }),
+    (e) => e instanceof ApiError && e.status === 400
+  );
+});
+
+test('state exposes most recently closed month', async () => {
+  const empty = await call('GET', '/api/state');
+  assert.equal(empty.body.mostRecentClosedYm, null);
+  await call('POST', '/api/months', { ym: '2026-01' });
+  await call('POST', '/api/months/2026-01/close');
+  const s = await call('GET', '/api/state');
+  assert.equal(s.body.mostRecentClosedYm, '2026-01');
+});

@@ -79,6 +79,21 @@ function monthExpenses(db, monthId) {
     }));
 }
 
+function monthLeftovers(db, monthId) {
+  return db
+    .prepare(
+      'SELECT id, profile_id, amount_cents, category, note FROM leftover_entries WHERE month_id = ? ORDER BY id'
+    )
+    .all(monthId)
+    .map((r) => ({
+      id: r.id,
+      profileId: r.profile_id,
+      amountCents: r.amount_cents,
+      category: r.category,
+      note: r.note,
+    }));
+}
+
 function monthSalaries(db, ym) {
   const rows = db
     .prepare('SELECT key, value FROM settings WHERE key LIKE ?')
@@ -203,6 +218,7 @@ export function createApi(db) {
       settings: getSettings(db),
       currentYm: currentYm(),
       openMonth: open ? { ym: open.ym, status: open.status } : null,
+      mostRecentClosedYm: mostRecentClosedYm(db),
     };
   });
 
@@ -324,6 +340,96 @@ export function createApi(db) {
   route('GET', '/api/months/:ym/summary', (m) => {
     const month = requireMonth(db, m.ym);
     return liveSummary(db, month);
+  });
+
+  route('GET', '/api/months/:ym/history', (m) => {
+    const month = requireMonth(db, m.ym);
+    if (month.status !== 'closed') {
+      throw new ApiError(409, 'history is available for closed months only');
+    }
+    return {
+      ym: month.ym,
+      closedAt: month.closed_at,
+      snapshot: JSON.parse(month.summary_json ?? 'null'),
+      items: monthPlanItems(db, month.id),
+      expenses: monthExpenses(db, month.id),
+      leftovers: monthLeftovers(db, month.id),
+    };
+  });
+
+  route('POST', '/api/months/:ym/expenses', (m, body) => {
+    const month = requireOpenMonth(db, m.ym);
+    validateCents(body.amountCents, { min: 1 });
+    if (typeof body.description !== 'string' || !body.description.trim()) {
+      throw new ApiError(400, 'description must be a non-empty string');
+    }
+    const dateRe = /^\d{4}-\d{2}-\d{2}$/;
+    if (!dateRe.test(body.date ?? '') || !body.date.startsWith(month.ym)) {
+      throw new ApiError(400, 'expense date must be within the month');
+    }
+    let planItemId = null;
+    if (body.planItemId != null) {
+      const item = db.prepare('SELECT * FROM plan_items WHERE id = ?').get(body.planItemId);
+      if (!item || item.month_id !== month.id || item.kind !== 'variable') {
+        throw new ApiError(400, 'planItemId must be a variable item of this month');
+      }
+      planItemId = item.id;
+    }
+    if (body.payerProfileId != null && ![1, 2].includes(body.payerProfileId)) {
+      throw new ApiError(400, 'payerProfileId must be 1 or 2');
+    }
+    db.prepare(
+      'INSERT INTO expenses (month_id, date, description, amount_cents, plan_item_id, payer_profile_id) VALUES (?, ?, ?, ?, ?, ?)'
+    ).run(
+      month.id,
+      body.date,
+      body.description.trim(),
+      body.amountCents,
+      planItemId,
+      body.payerProfileId ?? null
+    );
+    return monthPayload(db, month);
+  });
+
+  route('DELETE', '/api/expenses/:id', (m) => {
+    const expense = db.prepare('SELECT * FROM expenses WHERE id = ?').get(Number(m.id));
+    if (!expense) throw new ApiError(404, 'expense not found');
+    const month = db.prepare('SELECT * FROM months WHERE id = ?').get(expense.month_id);
+    requireOpenMonth(db, month.ym);
+    db.prepare('DELETE FROM expenses WHERE id = ?').run(expense.id);
+    return monthPayload(db, month);
+  });
+
+  route('POST', '/api/months/:ym/leftovers', (m, body) => {
+    const month = requireMonth(db, m.ym);
+    if (month.status !== 'closed') {
+      throw new ApiError(409, 'leftover log is for closed months');
+    }
+    if (mostRecentClosedYm(db) !== month.ym) {
+      throw new ApiError(409, 'only the most recently closed month is editable');
+    }
+    if (![1, 2].includes(body.profileId)) {
+      throw new ApiError(400, 'profileId must be 1 or 2');
+    }
+    validateCents(body.amountCents, { min: 1 });
+    if (typeof body.category !== 'string' || !body.category.trim()) {
+      throw new ApiError(400, 'category must be a non-empty string');
+    }
+    db.prepare(
+      'INSERT INTO leftover_entries (month_id, profile_id, amount_cents, category, note) VALUES (?, ?, ?, ?, ?)'
+    ).run(month.id, body.profileId, body.amountCents, body.category.trim(), body.note ?? '');
+    return { leftovers: monthLeftovers(db, month.id) };
+  });
+
+  route('DELETE', '/api/leftovers/:id', (m) => {
+    const entry = db.prepare('SELECT * FROM leftover_entries WHERE id = ?').get(Number(m.id));
+    if (!entry) throw new ApiError(404, 'leftover entry not found');
+    const month = db.prepare('SELECT * FROM months WHERE id = ?').get(entry.month_id);
+    if (mostRecentClosedYm(db) !== month.ym) {
+      throw new ApiError(409, 'only the most recently closed month is editable');
+    }
+    db.prepare('DELETE FROM leftover_entries WHERE id = ?').run(entry.id);
+    return { leftovers: monthLeftovers(db, month.id) };
   });
 
   route('POST', '/api/months/:ym/close', (m) => {
