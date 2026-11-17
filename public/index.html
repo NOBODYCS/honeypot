@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="en" data-mode="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Honeypot — two-person shared budget planner</title>
+  <meta name="description" content="Honeypot: a two-person shared budget planner. Plan a month, track shared spending, close with a settle-up.">
+  <link rel="stylesheet" href="styles.css">
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <header class="topbar">
+    <p class="brand">Honey<em>pot</em></p>
+    <label>
+      <span class="sr-only" data-i18n="profileLabel">Current profile</span>
+      <select id="profile-switch"></select>
+    </label>
+    <label>
+      <span class="sr-only" data-i18n="monthLabel">Month</span>
+      <select id="month-switch"></select>
+    </label>
+    <span id="month-status" class="status-tag" hidden></span>
+    <span class="spacer"></span>
+    <nav aria-label="Panels" class="row">
+      <button type="button" id="btn-settings" data-i18n="settings">Settings</button>
+      <button type="button" id="btn-history" data-i18n="history">History</button>
+      <button type="button" id="btn-leftovers" data-i18n="leftoverLog">Leftover log</button>
+      <button type="button" id="btn-close-month" class="primary" data-i18n="closeMonth">Close month</button>
+    </nav>
+  </header>
+
+  <main class="screen">
+    <aside id="side-a" class="side-panel left" aria-labelledby="side-a-title">
+      <h2 id="side-a-title"><span class="who" id="name-a">Partner A</span></h2>
+      <section aria-label="Personal obligatory list">
+        <h3 data-i18n="personalObligatory">Personal obligatory</h3>
+        <div id="personal-list-a"></div>
+      </section>
+    </aside>
+
+    <section class="center" id="center" aria-label="Month plan and spending">
+      <div id="month-missing" class="card" hidden>
+        <h2 data-i18n="noMonthTitle">No month open</h2>
+        <p data-i18n="noMonthText">Create the current month to start planning.</p>
+        <button type="button" class="primary" id="btn-create-month" data-i18n="createMonth">Create month</button>
+      </div>
+      <div id="month-body" hidden>
+        <section class="card" aria-label="Month plan">
+          <h2 data-i18n="monthPlan">Month plan</h2>
+          <div id="plan-salaries" class="row"></div>
+          <div id="plan-fixed"></div>
+          <div id="plan-variable"></div>
+        </section>
+        <section class="card" aria-label="Live figures">
+          <h2 data-i18n="liveFigures">Live figures</h2>
+          <div id="figures"></div>
+        </section>
+        <section class="card" aria-label="Spending log">
+          <h2 data-i18n="spendingLog">Spending log</h2>
+          <div id="expense-form"></div>
+          <div id="expense-list"></div>
+        </section>
+      </div>
+    </section>
+
+    <aside id="side-b" class="side-panel right" aria-labelledby="side-b-title">
+      <h2 id="side-b-title"><span class="who" id="name-b">Partner B</span></h2>
+      <section aria-label="Personal obligatory list">
+        <h3 data-i18n="personalObligatory">Personal obligatory</h3>
+        <div id="personal-list-b"></div>
+      </section>
+    </aside>
+  </main>
+
+  <dialog id="dlg-pick" class="centered" aria-labelledby="dlg-pick-title">
+    <h2 id="dlg-pick-title" data-i18n="whoAreYou">Which one are you?</h2>
+    <p class="hint" data-i18n="whoAreYouHint">This only prefills forms and picks your theme. Both partners can edit everything.</p>
+    <div id="pick-buttons" class="row"></div>
+  </dialog>
+
+  <dialog id="dlg-settings" class="panel" aria-labelledby="dlg-settings-title">
+    <div class="panel-head">
+      <h2 id="dlg-settings-title" data-i18n="settings">Settings</h2>
+      <button type="button" class="panel-close" data-i18n="close">Close</button>
+    </div>
+    <div id="settings-body"></div>
+  </dialog>
+
+  <dialog id="dlg-history" class="panel" aria-labelledby="dlg-history-title">
+    <div class="panel-head">
+      <h2 id="dlg-history-title" data-i18n="history">History</h2>
+      <button type="button" class="panel-close" data-i18n="close">Close</button>
+    </div>
+    <div id="history-body"></div>
+  </dialog>
+
+  <dialog id="dlg-leftovers" class="panel" aria-labelledby="dlg-leftovers-title">
+    <div class="panel-head">
+      <h2 id="dlg-leftovers-title" data-i18n="leftoverLog">Leftover log</h2>
+      <button type="button" class="panel-close" data-i18n="close">Close</button>
+    </div>
+    <div id="leftovers-body"></div>
+  </dialog>
+
+  <dialog id="dlg-summary" class="centered" aria-labelledby="dlg-summary-title">
+    <div class="panel-head">
+      <h2 id="dlg-summary-title" data-i18n="monthSummary">Month summary</h2>
+      <button type="button" class="panel-close" data-i18n="close">Close</button>
+    </div>
+    <div id="summary-body"></div>
+  </dialog>
+</body>
+</html>
