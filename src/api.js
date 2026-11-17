@@ -7,7 +7,7 @@ export class ApiError extends Error {
   }
 }
 
-const LANGUAGES = ['en', 'de'];
+const LANGUAGES = ['en', 'pl'];
 
 function getSettings(db) {
   const rows = db.prepare('SELECT key, value FROM settings').all();

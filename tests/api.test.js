@@ -32,11 +32,11 @@ test('GET /api/state returns seeded profiles, settings, current month', async ()
 test('PUT /api/settings updates currency, language, categories', async () => {
   const { body } = await call('PUT', '/api/settings', {
     currencyCode: 'USD',
-    language: 'de',
+    language: 'pl',
     categories: ['Alpha', 'Beta'],
   });
   assert.equal(body.currencyCode, 'USD');
-  assert.equal(body.language, 'de');
+  assert.equal(body.language, 'pl');
   assert.deepEqual(body.categories, ['Alpha', 'Beta']);
   const state = await call('GET', '/api/state');
   assert.equal(state.body.settings.currencyCode, 'USD');
