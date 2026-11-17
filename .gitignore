@@ -1,0 +1,7 @@
+# Runtime data — never commit personal data (constitution V, app doc A6)
+/data/
+*.db
+*.db-wal
+*.db-shm
+
+node_modules/
