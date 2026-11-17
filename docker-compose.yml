@@ -1,0 +1,14 @@
+services:
+  honeypot:
+    build: .
+    image: honeypot:latest
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      HONEYPOT_DB_PATH: /data/honeypot.db
+      PORT: "8080"
+    volumes:
+      - honeypot-data:/data
+volumes:
+  honeypot-data:
