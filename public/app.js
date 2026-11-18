@@ -30,6 +30,7 @@ const I18N = {
     add: 'Add',
     remove: 'Remove',
     save: 'Save',
+    saved: 'Saved.',
     transferAfterPayday: 'Transfer after payday',
     guaranteedLeft: 'Guaranteed leftover',
     plannedLeft: 'Planned leftover',
@@ -46,7 +47,7 @@ const I18N = {
     payer: 'Paid by (fronted)',
     potPaid: 'Pot (no payer)',
     linkItem: 'Planned item',
-    none: '—',
+    none: '\u2014',
     addExpense: 'Add expense',
     open: 'open',
     closed: 'closed',
@@ -72,7 +73,7 @@ const I18N = {
     category: 'Category',
     note: 'Note',
     addEntry: 'Add entry',
-    noLeftoverMonth: 'No closed month yet — the leftover log opens after the first close.',
+    noLeftoverMonth: 'No closed month yet \u2014 the leftover log opens after the first close.',
     readOnly: 'Read-only',
     editHint: 'Editable only for the most recently closed month.',
     historyEmpty: 'No closed months yet.',
@@ -81,88 +82,94 @@ const I18N = {
     error: 'Error',
     cancel: 'Cancel',
     confirm: 'Confirm',
+    noItems: 'Nothing planned yet.',
+    noExpenses: 'No spending logged yet.',
+    nothingYet: 'Nothing here yet.',
   },
   pl: {
-    profileLabel: 'Bieżący profil',
-    monthLabel: 'Miesiąc',
+    profileLabel: 'Aktualny profil',
+    monthLabel: 'Miesi\u0105c',
     settings: 'Ustawienia',
     history: 'Historia',
-    leftoverLog: 'Dziennik resztek',
-    closeMonth: 'Zamknij miesiąc',
-    personalObligatory: 'Osobiste obowiązki',
-    noMonthTitle: 'Brak otwartego miesiąca',
-    noMonthText: 'Utwórz bieżący miesiąc, aby zacząć planowanie.',
-    createMonth: 'Utwórz miesiąc',
-    monthPlan: 'Plan miesiąca',
-    liveFigures: 'Na bieżąco',
-    spendingLog: 'Dziennik wydatków',
-    whoAreYou: 'Kim jesteś?',
-    whoAreYouHint: 'To tylko wypełnia formularze i wybiera Twój motyw. Oboje możecie wszystko edytować.',
+    leftoverLog: 'Wolne \u015brodki',
+    closeMonth: 'Zamknij miesi\u0105c',
+    personalObligatory: 'Zobowi\u0105zania osobiste',
+    noMonthTitle: 'Nie otwarto miesi\u0105ca',
+    noMonthText: 'Utw\u00f3rz bie\u017c\u0105cy miesi\u0105c, \u017ceby zacz\u0105\u0107 planowanie.',
+    createMonth: 'Utw\u00f3rz miesi\u0105c',
+    monthPlan: 'Plan miesi\u0105ca',
+    liveFigures: 'Na bie\u017c\u0105co',
+    spendingLog: 'Rejestr wydatk\u00f3w',
+    whoAreYou: 'Kim jeste\u015b?',
+    whoAreYouHint: 'To tylko wst\u0119pnie wype\u0142nia formularze i wybiera Tw\u00f3j motyw. Oboje mo\u017cecie edytowa\u0107 wszystko.',
     close: 'Zamknij',
-    monthSummary: 'Podsumowanie miesiąca',
+    monthSummary: 'Podsumowanie miesi\u0105ca',
     salaries: 'Pensje',
     salaryFor: 'Pensja: {name}',
-    fixedShared: 'Stałe wspólne koszty',
-    variableShared: 'Zmienne wspólne koszty',
-    personalList: 'Lista osobistych obowiązków',
+    fixedShared: 'Sta\u0142e koszty wsp\u00f3lne',
+    variableShared: 'Zmienne koszty wsp\u00f3lne',
+    personalList: 'Lista zobowi\u0105za\u0144 osobistych',
     label: 'Nazwa',
     amount: 'Kwota',
-    partnerShare: 'Udział partnera %',
+    partnerShare: 'Udzia\u0142 partnera (%)',
     add: 'Dodaj',
-    remove: 'Usuń',
+    remove: 'Usu\u0144',
     save: 'Zapisz',
-    transferAfterPayday: 'Przelew po wypłacie',
-    guaranteedLeft: 'Gwarantowana resztka',
-    plannedLeft: 'Planowana resztka',
-    projectedLeft: 'Prognozowana resztka',
-    potBalance: 'Stan wspólnego kotła',
+    saved: 'Zapisano.',
+    transferAfterPayday: 'Przelew po wyp\u0142acie',
+    guaranteedLeft: 'Wolne \u015brodki \u2014 gwarantowane',
+    plannedLeft: 'Wolne \u015brodki \u2014 planowane',
+    projectedLeft: 'Wolne \u015brodki \u2014 prognozowane',
+    potBalance: 'Stan puli',
     settleUp: 'Rozliczenie',
-    actualSpent: 'Wydane dotąd',
-    vsPlan: 'względem planu',
-    unplanned: 'Nieplanowane',
+    actualSpent: 'Wydane dot\u0105d',
+    vsPlan: 'vs plan',
+    unplanned: 'Pozaplanowe',
     planned: 'Plan',
-    actual: 'Faktycznie',
+    actual: 'Rzeczywi\u015bcie',
     date: 'Data',
     description: 'Opis',
-    payer: 'Zapłacił (z własnej kieszeni)',
-    potPaid: 'Kocioł (bez płatnika)',
-    linkItem: 'Planowana pozycja',
-    none: '—',
+    payer: 'Zap\u0142aci\u0142(a) z w\u0142asnej kieszeni',
+    potPaid: 'Pula (bez p\u0142atnika)',
+    linkItem: 'Zaplanowana pozycja',
+    none: '\u2014',
     addExpense: 'Dodaj wydatek',
     open: 'otwarty',
-    closed: 'zamknięty',
-    monthClosed: 'Ten miesiąc jest zamknięty i tylko do odczytu.',
-    confirmClose: 'Zamknąć ten miesiąc? Plan i wydatki zostaną zablokowane.',
-    personalSupport: 'Wsparcie osobiste',
-    contributions: 'Wkłady',
-    paid: 'Faktycznie zapłacone (z własnej kieszeni)',
-    potReturn: 'Zwrot z kotła',
-    profileNames: 'Nazwy profili',
+    closed: 'zamkni\u0119ty',
+    monthClosed: 'Ten miesi\u0105c jest zamkni\u0119ty \u2014 tylko do odczytu.',
+    confirmClose: 'Zamkn\u0105\u0107 ten miesi\u0105c? Plan i wydatki zostan\u0105 zablokowane.',
+    personalSupport: 'Wsparcie partnera',
+    contributions: 'Sk\u0142adki',
+    paid: 'Zap\u0142acone z w\u0142asnej kieszeni',
+    potReturn: 'Zwrot z puli',
+    profileNames: 'Dane profilu',
     themeColors: 'Motyw',
-    accent: 'Akcent',
-    background: 'Tło',
+    accent: 'Kolor akcentu',
+    background: 'T\u0142o',
     surface: 'Powierzchnia',
     text: 'Kolor tekstu',
     mode: 'Tryb',
     light: 'jasny',
     dark: 'ciemny',
     currency: 'Waluta (ISO 4217)',
-    categories: 'Kategorie wydatków',
-    language: 'Język',
-    leftoverEntries: 'Wpisy resztek',
+    categories: 'Kategorie wydatk\u00f3w',
+    language: 'J\u0119zyk',
+    leftoverEntries: 'Wpisy',
     category: 'Kategoria',
     note: 'Notatka',
     addEntry: 'Dodaj wpis',
-    noLeftoverMonth: 'Brak zamkniętego miesiąca — dziennik resztek otworzy się po pierwszym zamknięciu.',
+    noLeftoverMonth: 'Nie ma jeszcze zamkni\u0119tego miesi\u0105ca \u2014 dziennik otworzy si\u0119 po pierwszym zamkni\u0119ciu.',
     readOnly: 'Tylko do odczytu',
-    editHint: 'Edytowalny tylko dla ostatnio zamkniętego miesiąca.',
-    historyEmpty: 'Brak zamkniętych miesięcy.',
-    guaranteed: 'Gwarantowana',
-    plannedWord: 'Planowana',
-    error: 'Błąd',
+    editHint: 'Edytowalne tylko w ostatnio zamkni\u0119tym miesi\u0105cu.',
+    historyEmpty: 'Nie zamkni\u0119to jeszcze \u017cadnego miesi\u0105ca.',
+    guaranteed: 'Gwarantowane',
+    plannedWord: 'Planowane',
+    error: 'B\u0142\u0105d',
     cancel: 'Anuluj',
-    confirm: 'Potwierdź',
-    profile: 'Profil',
+    confirm: 'Potwierd\u017a',
+    noItems: 'Jeszcze nic nie zaplanowano.',
+    noExpenses: 'Nie zapisano jeszcze \u017cadnych wydatk\u00f3w.',
+    nothingYet: 'Jeszcze nic tu nie ma.',
   },
 };
 
@@ -271,7 +278,7 @@ function showProfilePick() {
     box.append(
       el('button', {
         type: 'button',
-        class: 'primary',
+        class: 'btn btn-primary',
         text: p.name,
         onclick: () => {
           setProfile(p.id);
@@ -341,6 +348,7 @@ function moneyInput(cents, oninput, { disabled = false } = {}) {
     type: 'number',
     step: '0.01',
     min: '0',
+    'aria-label': 'amount',
     value: ((cents ?? 0) / 100).toFixed(2),
     disabled,
     oninput: (e) => oninput(parseMoney(e.target.value)),
@@ -354,6 +362,23 @@ function textInput(value, oninput, { disabled = false } = {}) {
     disabled,
     oninput: (e) => oninput(e.target.value),
   });
+}
+
+let toastTimer;
+function notify(kind, message) {
+  const toast = $('#toast');
+  if (!toast) return alert(message);
+  toast.dataset.kind = kind;
+  toast.textContent = message;
+  toast.hidden = false;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => {
+    toast.hidden = true;
+  }, 4000);
+}
+
+function notifyError(err) {
+  notify('error', err.message);
 }
 
 function cloneDraft(month) {
@@ -442,6 +467,7 @@ function itemRows(kind, owner, listEl) {
       cells.push(
         el('button', {
           type: 'button',
+          class: 'btn btn-danger',
           text: t('remove'),
           disabled: !canEdit,
           onclick: () => {
@@ -456,11 +482,19 @@ function itemRows(kind, owner, listEl) {
     });
 }
 
-function itemTable(headCells, rows) {
+function itemTable(headCells, rows, closedText, emptyText) {
   const table = el('table', {});
   const headRow = el('tr', {}, ...headCells.map((h) => el('th', { text: h })));
   table.append(el('thead', {}, headRow), el('tbody', {}, ...rows));
-  return table;
+  const wrap = el('div', { class: 'table-wrap' });
+  wrap.append(table);
+  if (!rows.length) {
+    wrap.append(el('p', { class: 'empty-row', text: emptyText ?? t('noItems') }));
+  }
+  if (closedText) {
+    wrap.append(el('p', { class: 'empty-row', text: closedText }));
+  }
+  return wrap;
 }
 
 function addItem(kind, owner) {
@@ -475,40 +509,47 @@ function addItem(kind, owner) {
   renderPersonal(2, $('#personal-list-b'));
 }
 
+function field(labelText, control) {
+  return el('div', { class: 'field' },
+    el('label', { class: 'field-label', text: labelText }),
+    control
+  );
+}
+
 function renderPlan() {
   const canEdit = editable();
   const box = $('#plan-salaries');
   box.replaceChildren(
     el('h3', { text: t('salaries') }),
-    ...[1, 2].map((pid) =>
-      el('label', { class: 'row' },
-        el('span', { text: t('salaryFor', { name: state.profiles.find((p) => p.id === pid)?.name ?? pid }) }),
-        moneyInput(state.draft.salaries[pid], (v) => (state.draft.salaries[pid] = v), { disabled: !canEdit })
-      )
-    ),
-    el('button', {
-      type: 'button',
-      class: 'primary',
-      text: t('save'),
-      disabled: !canEdit,
-      onclick: savePlan,
-    })
+    el('div', { class: 'form-grid' },
+      ...[1, 2].map((pid) =>
+        field(t('salaryFor', { name: state.profiles.find((p) => p.id === pid)?.name ?? pid }),
+          moneyInput(state.draft.salaries[pid], (v) => (state.draft.salaries[pid] = v), { disabled: !canEdit }))
+      ),
+      el('button', {
+        type: 'button',
+        class: 'btn btn-primary',
+        text: t('save'),
+        disabled: !canEdit,
+        onclick: savePlan,
+      })
+    )
   );
 
   const fixed = $('#plan-fixed');
   fixed.replaceChildren(
     el('h3', { text: t('fixedShared') }),
-    itemTable([t('label'), t('amount')], itemRows('fixed')),
+    itemTable([t('label'), t('amount')], itemRows('fixed'), canEdit ? null : t('monthClosed'), t('noItems')),
     canEdit
-      ? el('button', { type: 'button', text: t('add'), onclick: () => addItem('fixed') })
+      ? el('button', { type: 'button', class: 'btn', text: t('add'), onclick: () => addItem('fixed') })
       : el('p', { class: 'hint', text: t('monthClosed') })
   );
 
   const variable = $('#plan-variable');
   variable.replaceChildren(
     el('h3', { text: t('variableShared') }),
-    itemTable([t('label'), t('amount')], itemRows('variable')),
-    canEdit ? el('button', { type: 'button', text: t('add'), onclick: () => addItem('variable') }) : null
+    itemTable([t('label'), t('amount')], itemRows('variable'), canEdit ? null : t('monthClosed'), t('noItems')),
+    canEdit ? el('button', { type: 'button', class: 'btn', text: t('add'), onclick: () => addItem('variable') }) : null
   );
 }
 
@@ -530,17 +571,17 @@ async function savePlan() {
     state.draft = cloneDraft(state.month);
     renderMonth();
   } catch (err) {
-    alert(err.message);
+    notifyError(err);
   }
 }
 
 function renderPersonal(owner, box) {
   const canEdit = editable();
   box.replaceChildren(
-    itemTable([t('label'), t('amount'), t('partnerShare')], itemRows('personal', owner)),
+    itemTable([t('label'), t('amount'), t('partnerShare')], itemRows('personal', owner), canEdit ? null : t('monthClosed')),
     canEdit
-      ? el('button', { type: 'button', text: t('add'), onclick: () => addItem('personal', owner) })
-      : el('p', { class: 'hint', text: t('monthClosed') })
+      ? el('button', { type: 'button', class: 'btn', text: t('add'), onclick: () => addItem('personal', owner) })
+      : null
   );
 }
 
@@ -608,11 +649,15 @@ function renderExpenses() {
       ...state.profiles.map((p) => el('option', { value: p.id, text: p.name }))
     );
     form.append(
-      el('div', { class: 'row' },
-        dateInput, descInput, amountInput, itemSelect, payerSelect,
+      el('div', { class: 'form-grid' },
+        field(t('date'), dateInput),
+        field(t('description'), descInput),
+        field(t('amount'), amountInput),
+        field(t('linkItem'), itemSelect),
+        field(t('payer'), payerSelect),
         el('button', {
           type: 'button',
-          class: 'primary',
+          class: 'btn btn-primary',
           text: t('addExpense'),
           onclick: async () => {
             try {
@@ -625,7 +670,7 @@ function renderExpenses() {
               });
               renderMonth();
             } catch (err) {
-              alert(err.message);
+              notifyError(err);
             }
           },
         })
@@ -650,20 +695,21 @@ function renderExpenses() {
             canEdit
               ? el('button', {
                   type: 'button',
+                  class: 'btn btn-danger',
                   text: t('remove'),
                   onclick: async () => {
                     try {
                       state.month = await api('DELETE', `/api/expenses/${e.id}`);
                       renderMonth();
                     } catch (err) {
-                      alert(err.message);
+                      notifyError(err);
                     }
                   },
                 })
               : null
           )
         );
-      })
+      }), null, t('noExpenses')
     ),
     el('h3', { text: `${t('planned')} / ${t('actual')}` }),
     itemTable(
@@ -713,7 +759,7 @@ function renderSummaryBody(box, snapshot, month) {
   ];
   if (snapshot.settle && (snapshot.settle.A !== 0 || snapshot.settle.B !== 0)) {
     const [p, other] = snapshot.settle.A > 0 ? ['A', 'B'] : ['B', 'A'];
-    parts.push(el('p', { class: 'error-text' },
+    parts.push(el('p', { class: 'settle' },
       `${t('settleUp')}: ${names[other]} → ${names[p]} ${fmtMoney(Math.abs(snapshot.settle[p]))}`));
   }
   if (snapshot.personalSupport.length) {
@@ -746,49 +792,64 @@ async function closeMonth() {
     await refreshState();
     await loadMonths();
   } catch (err) {
-    alert(err.message);
+    notifyError(err);
   }
 }
 
 /* ---------- settings (US6) ---------- */
+
+function segmented(name, options, current) {
+  return el('div', { class: 'segmented', role: 'radiogroup' },
+    ...options.map(([value, label]) =>
+      el('label', {},
+        el('input', { type: 'radio', name, value, checked: value === current || null }),
+        el('span', { text: label })
+      )
+    )
+  );
+}
 
 function renderSettings() {
   const box = $('#settings-body');
   box.replaceChildren();
 
   for (const p of state.profiles) {
+    const colorInputs = ['accent', 'background', 'surface', 'text'].map((key) =>
+      el('input', { type: 'color', value: p.theme[key] ?? '#000000', 'aria-label': t(key) })
+    );
+    const modeGroup = segmented(`mode-${p.id}`, [['light', t('light')], ['dark', t('dark')]], p.theme.mode ?? 'light');
     const nameInput = textInput(p.name, () => {});
-    const colorFields = ['accent', 'background', 'surface', 'text'].map((key) =>
-      el('label', { class: 'row' },
-        el('span', { text: t(key === 'text' ? 'text' : key) }),
-        el('input', { type: 'color', value: p.theme[key] })
-      )
-    );
-    const modeSelect = el('select', {},
-      el('option', { value: 'light', text: t('light') }),
-      el('option', { value: 'dark', text: t('dark') })
-    );
-    modeSelect.value = p.theme.mode ?? 'light';
     box.append(
-      el('h3', { text: `${t('profileNames')} — ${p.name}` }),
-      el('div', { class: 'row' },
-        el('label', { class: 'row' }, el('span', { text: t('label') }), nameInput),
-        ...colorFields,
-        el('label', { class: 'row' }, el('span', { text: t('mode') }), modeSelect),
+      el('div', { class: 'stack' },
+        el('h3', { text: p.name }),
+        field(t('label'), nameInput),
+        el('div', { class: 'form-grid' },
+          el('div', { class: 'field' },
+            el('label', { class: 'field-label', text: t('themeColors') }),
+            el('div', { class: 'swatches' },
+              ...colorInputs.map((input, i) =>
+                field(t(['accent', 'background', 'surface', 'text'][i]), input)
+              )
+            )
+          ),
+          field(t('mode'), modeGroup)
+        ),
         el('button', {
           type: 'button',
+          class: 'btn btn-primary',
           text: t('save'),
           onclick: async () => {
-            const theme = { mode: modeSelect.value };
-            for (let i = 0; i < colorFields.length; i++) {
-              theme[['accent', 'background', 'surface', 'text'][i]] = colorFields[i].querySelector('input').value;
-            }
+            const theme = { mode: modeGroup.querySelector('input:checked')?.value ?? 'light' };
+            ['accent', 'background', 'surface', 'text'].forEach((key, i) => {
+              theme[key] = colorInputs[i].value;
+            });
             try {
               await api('PUT', `/api/profiles/${p.id}`, { name: nameInput.value, theme });
               await refreshState();
               renderSettings();
+              notify('ok', t('saved'));
             } catch (err) {
-              alert(err.message);
+              notifyError(err);
             }
           },
         })
@@ -797,19 +858,16 @@ function renderSettings() {
   }
 
   const currencyInput = el('input', { type: 'text', value: state.settings.currencyCode, maxlength: '3' });
-  const langSelect = el('select', {},
-    el('option', { value: 'en', text: 'English' }),
-    el('option', { value: 'pl', text: 'Polski' })
-  );
-  langSelect.value = state.settings.language;
-  const catBox = el('div', {});
+  const langGroup = segmented('lang', [['en', 'English'], ['pl', 'Polski']], state.settings.language);
+  const catBox = el('div', { class: 'stack' });
   const renderCats = () => {
     catBox.replaceChildren(
       ...state.settings.categories.map((cat, idx) =>
-        el('div', { class: 'row' },
-          textInput(cat, (v) => (state.settings.categories[idx] = v)),
+        el('div', { class: 'form-grid' },
+          field(t('label'), textInput(cat, (v) => (state.settings.categories[idx] = v))),
           el('button', {
             type: 'button',
+            class: 'btn btn-danger',
             text: t('remove'),
             onclick: () => {
               state.settings.categories.splice(idx, 1);
@@ -820,6 +878,7 @@ function renderSettings() {
       ),
       el('button', {
         type: 'button',
+        class: 'btn',
         text: t('add'),
         onclick: () => {
           state.settings.categories.push('');
@@ -830,29 +889,35 @@ function renderSettings() {
   };
   renderCats();
   box.append(
-    el('h3', { text: t('currency') }),
-    el('div', { class: 'row' }, currencyInput, langSelect,
-      el('button', {
-        type: 'button',
-        text: t('save'),
-        onclick: async () => {
-          try {
-            await api('PUT', '/api/settings', {
-              currencyCode: currencyInput.value.toUpperCase(),
-              language: langSelect.value,
-              categories: state.settings.categories.filter((c) => c.trim()),
-            });
-            await refreshState();
-            renderSettings();
-            renderMonth();
-          } catch (err) {
-            alert(err.message);
-          }
-        },
-      })
-    ),
-    el('h3', { text: t('categories') }),
-    catBox
+    el('div', { class: 'stack' },
+      el('h3', { text: t('currency') }),
+      el('div', { class: 'form-grid' },
+        field(t('currency'), currencyInput),
+        field(t('language'), langGroup),
+        el('button', {
+          type: 'button',
+          class: 'btn btn-primary',
+          text: t('save'),
+          onclick: async () => {
+            try {
+              await api('PUT', '/api/settings', {
+                currencyCode: currencyInput.value.toUpperCase(),
+                language: langGroup.querySelector('input:checked')?.value ?? 'en',
+                categories: state.settings.categories.filter((c) => c.trim()),
+              });
+              await refreshState();
+              renderSettings();
+              renderMonth();
+              notify('ok', t('saved'));
+            } catch (err) {
+              notifyError(err);
+            }
+          },
+        })
+      ),
+      el('h3', { text: t('categories') }),
+      catBox
+    )
   );
 }
 
@@ -886,11 +951,14 @@ async function renderLeftovers(historyData) {
   box.replaceChildren(
     el('p', { class: 'hint', text: `${ym} — ${editableMonth ? t('editHint') : t('readOnly')}` }),
     editableMonth
-      ? el('div', { class: 'row' },
-          profileSelect, amountInput, categorySelect, noteInput,
+      ? el('div', { class: 'form-grid' },
+          field(t('profileLabel'), profileSelect),
+          field(t('amount'), amountInput),
+          field(t('category'), categorySelect),
+          field(t('note'), noteInput),
           el('button', {
             type: 'button',
-            class: 'primary',
+            class: 'btn btn-primary',
             text: t('addEntry'),
             onclick: async () => {
               try {
@@ -902,7 +970,7 @@ async function renderLeftovers(historyData) {
                 });
                 renderLeftovers({ ...data, leftovers });
               } catch (err) {
-                alert(err.message);
+                notifyError(err);
               }
             },
           })
@@ -920,13 +988,14 @@ async function renderLeftovers(historyData) {
             editableMonth
               ? el('button', {
                   type: 'button',
+                  class: 'btn btn-danger',
                   text: t('remove'),
                   onclick: async () => {
                     try {
                       const { leftovers } = await api('DELETE', `/api/leftovers/${entry.id}`);
                       renderLeftovers({ ...data, leftovers });
                     } catch (err) {
-                      alert(err.message);
+                      notifyError(err);
                     }
                   },
                 })
@@ -934,7 +1003,7 @@ async function renderLeftovers(historyData) {
           )
         )
       )
-    )
+    ), null, t('nothingYet')
   );
 }
 
@@ -966,7 +1035,7 @@ async function renderHistory() {
 
 function showErrorMessage(err) {
   console.error(err);
-  alert(`${t('error')}: ${err.message}`);
+  notify('error', `${t('error')}: ${err.message}`);
 }
 
 async function init() {
@@ -999,7 +1068,8 @@ async function init() {
   });
   refreshState()
     .then(loadMonths)
-    .catch(showErrorMessage);
+    .catch(showErrorMessage)
+    .finally(() => document.getElementById('boot')?.remove());
 }
 
 init();
