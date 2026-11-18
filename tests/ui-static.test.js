@@ -329,6 +329,17 @@ test('tooltips: every live-figure caption key has a matching tooltip key in BOTH
   assert.ok(app.includes("figRow('leftAfterShared'") && app.includes("tipWrap('splitOfPlan', 'tipSplitOfPlan', {"), 'figures must pass live params to their tips');
 });
 
+/* ---------- layout hardening: no clipping / no side scroll / scaling ---------- */
+
+test('layout: tooltips flip inside viewport AND dialog bounds; amounts wrap at phone width; chips wrap', () => {
+  assert.ok(app.includes("trigger.closest('dialog')"), 'tooltip must respect dialog clip bounds');
+  assert.ok(app.includes("setProperty('right', '0')") && app.includes("setProperty('bottom', 'calc(100% + 6px)')"), 'tooltip must flip left/up near edges');
+  assert.ok(/@media \(min-width: 40em\)\s*\{[^}]*td\.num, th\.num\s*\{[^}]*white-space:\s*nowrap/.test(css), 'td.num nowrap must be wide-screen only');
+  assert.ok(!/\.cat-chip\s*\{[^}]*white-space:\s*nowrap/.test(css), 'cat-chip must be allowed to wrap');
+  assert.ok(/\.split-row input\.num-input\s*\{[^}]*flex-shrink:\s*1/.test(css), 'split inputs must shrink instead of overflowing');
+  assert.ok(/\.tooltip\s*\{[^}]*overflow-wrap:\s*break-word/.test(css), 'tooltip text must wrap, not clip');
+});
+
 /* ---------- owner follow-ups (2.1): live suggestions, no confirms, log rework ---------- */
 
 test('follow-ups: suggestion adjustments cover custom items when impossible; apply-all includes them', () => {

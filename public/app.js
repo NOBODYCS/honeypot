@@ -388,6 +388,24 @@ function initTip(trigger, tip, { toggleOnActivate = true } = {}) {
   const show = () => {
     tip.hidden = false;
     trigger.setAttribute('aria-expanded', 'true');
+    /* keep the tip inside the visible area: flip to the left / above the trigger near
+       edges. Inside a dialog, the dialog's own box is the clip boundary (it scrolls).
+       CSSOM setProperty — CSP blocks the style attribute. */
+    tip.style.removeProperty('left');
+    tip.style.removeProperty('right');
+    tip.style.removeProperty('top');
+    tip.style.removeProperty('bottom');
+    const clip = trigger.closest('dialog');
+    const bounds = clip ? clip.getBoundingClientRect() : { right: window.innerWidth, bottom: window.innerHeight };
+    const r = tip.getBoundingClientRect();
+    if (r.right > bounds.right - 8) {
+      tip.style.setProperty('left', 'auto');
+      tip.style.setProperty('right', '0');
+    }
+    if (r.bottom > bounds.bottom - 8) {
+      tip.style.setProperty('top', 'auto');
+      tip.style.setProperty('bottom', 'calc(100% + 6px)');
+    }
   };
   const hide = () => {
     clearTimeout(hoverTimer);

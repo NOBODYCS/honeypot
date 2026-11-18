@@ -756,7 +756,14 @@ td.num, th.num {
   text-align: right;
   font-family: var(--font-mono);
   font-variant-numeric: tabular-nums;
-  white-space: nowrap;
+}
+
+/* keep amounts on one line on wide screens; allow wrapping at phone width so tables
+   never force horizontal scrolling */
+@media (min-width: 40em) {
+  td.num, th.num {
+    white-space: nowrap;
+  }
 }
 
 /* ---- figures: stat tiles ---- */
@@ -857,6 +864,7 @@ figure.fig .money {
   z-index: 40;
   width: max-content;
   max-width: min(20rem, 80vw);
+  overflow-wrap: break-word;
   background: var(--ink);
   color: var(--canvas);
   font-size: 0.78rem;
@@ -967,10 +975,11 @@ figure.fig .money {
 .cat-chip {
   display: inline-flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 6px;
   font-size: 0.85rem;
   color: var(--ink-2);
-  white-space: nowrap;
+  overflow-wrap: break-word;
 }
 
 .cat-dot {
@@ -1015,7 +1024,8 @@ figure.fig .money {
 
 .split-row input.num-input {
   width: 4.5rem;
-  flex-shrink: 0;
+  min-width: 3.5rem;
+  flex-shrink: 1;
 }
 
 .btn-mini {

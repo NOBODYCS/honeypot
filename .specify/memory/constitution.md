@@ -204,10 +204,16 @@ change, a semantic version bump (MAJOR for removed/redefined principles, MINOR f
 principles/sections, PATCH for clarifications), and a change-log entry. All PRs must verify
 compliance; any complexity beyond the principles above must be justified in the PR.
 
-**Version**: 2.1.0 | **Ratified**: 2026-11-17 | **Last Amended**: 2026-11-18
+**Version**: 2.1.1 | **Ratified**: 2026-11-17 | **Last Amended**: 2026-11-18
 
 ## Change Log
 
+- **2.1.1 (2026-11-18)** — PATCH: layout hardening after owner visual report (clipping /
+  overlap / bad wrapping): tooltips now flip left/up to stay inside the viewport AND inside
+  scrolling dialogs (measured via getBoundingClientRect, CSSOM only); `td.num` nowrap applies
+  only ≥40em so tables never force side-scrolling at phone width; category chips and tooltip
+  text wrap (`overflow-wrap`); split-row % inputs shrink instead of overflowing. Guarded by
+  ui-static tests. 73/73 pass.
 - **2.1.0 (2026-11-18)** — MINOR: owner follow-ups. (a) Fair-share suggestions are fully live:
   chips appear as soon as an item is added, recompute on every keystroke, and when equalization
   is impossible they also propose adjusting the custom % values (still one-click, never silent).
