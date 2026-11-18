@@ -267,7 +267,7 @@ test('tooltips: every field-label i18n key has a matching tip<Key> key in BOTH e
   const labelKeys = [
     'salaries', 'salaryFor', 'fixedShared', 'variableShared', 'personalObligatory',
     'monthPlan', 'liveFigures', 'spendingLog', 'label', 'amount', 'partnerShare', 'splitLabel',
-    'date', 'category', 'description', 'linkItem', 'payer', 'profile', 'note',
+    'category', 'description', 'payer', 'profile', 'note',
     'currency', 'language', 'categories', 'themeColors', 'mode', 'sectionProfile', 'sectionApp',
     'settings', 'history', 'leftoverLog', 'closeMonth', 'newMonth', 'createMonth',
     'noMonthTitle', 'noMonthText', 'noItems', 'noExpenses', 'nothingYet', 'historyEmpty',
@@ -329,6 +329,34 @@ test('tooltips: every live-figure caption key has a matching tooltip key in BOTH
   assert.ok(app.includes("figRow('leftAfterShared'") && app.includes("tipWrap('splitOfPlan', 'tipSplitOfPlan', {"), 'figures must pass live params to their tips');
 });
 
+/* ---------- owner follow-ups (2.1): live suggestions, no confirms, log rework ---------- */
+
+test('follow-ups: suggestion adjustments cover custom items when impossible; apply-all includes them', () => {
+  assert.ok(money.includes('adjustments'), 'suggestFairSplit must return adjustments for custom items when clamped');
+  assert.ok(app.includes('sug.adjustments') && app.includes("'data-adj'"), 'chips must render on custom items too (clamped case)');
+  assert.ok(/\[...sug\.suggestions, \.\.\.\(sug\.adjustments \?\? \[\]\)\]/.test(app), 'apply-all must include adjustments');
+});
+
+test('follow-ups: no hover underlines, simplified salary hint, no section hint paragraphs, no planned/actual table', () => {
+  assert.ok(!/text-decoration/.test(css), 'no underlines on hoverable elements');
+  assert.ok(!app.includes('splitHint'), 'split hint paragraphs under Fixed/Variable must be gone (tooltip on Split covers it)');
+  assert.ok(app.includes('ofIncomeHint'), 'salary hint must use the short of-income wording');
+  assert.ok(!app.includes('planVsActual') && !app.includes("t('planned')") && !app.includes("t('actual')"), 'no planned/actual split anywhere in the UI');
+  const sh = app.slice(app.indexOf('function shareHint'), app.indexOf('\nfunction ', app.indexOf('function shareHint') + 1));
+  assert.ok(!sh.includes('ofPlan'), 'salary hint must not mix % of plan with % of income');
+});
+
+test('follow-ups: spending log rework — no date/planned-item fields, creatable categories, per-category totals, shared-only hint', () => {
+  assert.ok(!app.includes("id: 'ef-date'") && !app.includes("id: 'ef-item'"), 'expense form must not have date or planned-item fields');
+  assert.ok(!app.includes("t('date')") && !app.includes("t('linkItem')"), 'date/linkItem keys must be gone from the UI');
+  assert.ok(app.includes("list: 'ef-cat-list'") && app.includes("el('datalist'"), 'category must be a creatable free-text field with suggestions');
+  assert.ok(app.includes("PUT', '/api/settings'") && app.includes('categories: [...state.settings.categories'), 'new category must be persisted to settings');
+  assert.ok(app.includes('byCat') && app.includes('catStrip'), 'per-category totals strip missing');
+  const { en, pl } = i18n();
+  assert.ok('spendingLogHint' in en && 'spendingLogHint' in pl, 'shared-only log hint missing in en/pl');
+  assert.ok(app.includes("t('spendingLogHint')"), 'log hint must be rendered');
+});
+
 /* ---------- no-pot model rework (2.0) ---------- */
 
 test('no-pot model: pot balance, coverage bar and old leftover figures are gone everywhere', () => {
@@ -379,11 +407,12 @@ test('api errors carry codes and map to i18n; expense edit endpoint exists', () 
   assert.ok(app.includes('err_${data.code}'), 'client must map codes to i18n strings');
   assert.ok(api.includes("route('PUT', '/api/expenses/:id'"), 'expense edit endpoint missing');
   assert.ok(app.includes("PUT', `/api/expenses/"), 'client expense PUT missing');
-  assert.ok(app.includes('editingExpenseId') && app.includes('id: \'ef-date\''), 'expense form must support edit-in-place and preserved fields');
+  assert.ok(app.includes('editingExpenseId') && app.includes("id: 'ef-desc'") && app.includes("id: 'ef-category'"), 'expense form must support edit-in-place and preserved fields');
 });
 
-test('destructive + settings: confirms on delete, dirty-guard on settings close', () => {
-  assert.ok((app.match(/showConfirm\(t\('confirmDelete'\)/g) ?? []).length >= 3, 'plan/expense/leftover deletes need confirm');
+test('destructive + settings: NO confirm on deletes (owner decision), dirty-guard on settings close, close-month confirm stays', () => {
+  assert.ok(!app.includes('confirmDelete'), 'deletes must not ask for confirmation anymore');
+  assert.ok(app.includes("showConfirm(t('confirmClose')"), 'closing a month is permanent and must still confirm');
   assert.ok(app.includes('settingsDirty') && app.includes("t('discardChanges')") && app.includes('function requestClose'), 'settings close must ask before discarding edits');
 });
 

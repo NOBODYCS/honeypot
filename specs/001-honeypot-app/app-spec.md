@@ -17,9 +17,13 @@ This document follows anonymization rules A1–A5 and is safe to store in the pu
   removed from the UI, summary and history.
 - 2026-11-18 (R17, advisory only): the app may SUGGEST per-item splits for shared costs so both
   partners end up contributing the same % of their own salary (suggestFairSplit in money.js).
-  Suggestions are never applied silently, never on load, never to items with a manual %;
-  applying them writes ordinary editable partnerSharePct values. They never change the
-  money model or close math (R1–R16 unchanged).
+  Suggestions are never applied silently, never on load; applying them writes ordinary editable
+  partnerSharePct values. Manual-% items are never touched — EXCEPT when equalization is
+  impossible, in which case the app also suggests adjusting the custom values (closest possible).
+  They never change the money model or close math (R1–R16 unchanged).
+- 2026-11-18 (2.1): spending log = flat list of shared expenses (category, description, amount,
+  payer); no date field, no planned-item link, no planned/actual table (the plan states what
+  reality should look like). Categories are creatable from the form. Deletes are not confirmed.
 
 - Cash flow made explicit (R8): no shared pot — each partner pays their share from their own
   salary. Expenses without a payer are split by share (each paid their own part); only

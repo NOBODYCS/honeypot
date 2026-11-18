@@ -17,6 +17,7 @@ const I18N = {
     monthPlan: 'Month plan',
     liveFigures: 'Live figures',
     spendingLog: 'Spending log',
+    spendingLogHint: 'Shared spending that benefits you both — movies, theater, dinner. Personal costs live in the side panels.',
     whoAreYou: 'Which one are you?',
     whoAreYouHint: "This only prefills forms and picks your theme. Both partners can edit everything.",
     close: 'Close',
@@ -39,14 +40,9 @@ const I18N = {
     settleUp: 'Between you two',
     settleLine: '{from} chipped in {amount} more this month — {to} pays it back.',
     settleEven: 'Even — nothing to settle',
-    unplanned: 'Unplanned',
-    planned: 'Planned',
-    actual: 'Actual',
-    date: 'Date',
     description: 'Description',
     payer: "Paid by",
     potPaid: 'Split by share (no one fronted)',
-    linkItem: 'Planned item',
     none: '\u2014',
     addExpense: 'Add expense',
     open: 'open',
@@ -93,9 +89,9 @@ const I18N = {
     splitOfPlan: '% of shared costs',
     ofPlan: "of shared costs",
     ofIncome: '% of own salary',
+    ofIncomeHint: 'of own salary',
     fairIncome: "Fair share = equal % of own salary — both pay {pct}%",
     splitLabel: 'Split',
-    splitHint: 'Split this cost between {a} and {b} — blank = automatic split by salary.',
     auto: 'auto',
     sectionProfile: 'Your profile',
     profileHint: 'Name, theme and mode apply only to you — the other partner has their own.',
@@ -103,7 +99,6 @@ const I18N = {
     newMonth: 'New month',
     noMonthsYet: 'No months yet',
     discardChanges: 'Discard unsaved settings changes?',
-    confirmDelete: 'Delete this item? This cannot be undone.',
     savedSkipped: 'Saved. {n} row(s) skipped — they need a name and an amount above 0.',
     edit: 'Edit',
     newItem: 'New item',
@@ -128,10 +123,8 @@ const I18N = {
     tipAmount: 'Amount in the app currency, e.g. 120.50. Type digits and one decimal separator.',
     tipPartnerShare: '{name} chips in this % of this personal cost. It appears as its own line in the month summary and never changes the shared split.',
     tipSplitLabel: 'Split this one cost between {a} and {b}. Each % is that person’s part of this one cost. Blank = automatic split by salary; the two inputs stay in sync to 100%.',
-    tipDate: 'Date of the expense — must be a real day within the current month.',
     tipCategory: 'Category of the expense, from the list managed in Settings.',
     tipDescription: 'What the expense was for.',
-    tipLinkItem: 'Which planned variable item this expense belongs to, or unplanned.',
     tipPayer: 'Who actually paid: a partner (fronted personally, settled at close) or no one — split by share, each paying their own part.',
     tipProfile: 'Which partner this leftover entry belongs to.',
     tipNote: 'Free-text note for this entry.',
@@ -191,6 +184,7 @@ const I18N = {
     monthPlan: 'Plan miesi\u0105ca',
     liveFigures: 'Na bie\u017c\u0105co',
     spendingLog: 'Rejestr wydatk\u00f3w',
+    spendingLogHint: 'Wydatki wsp\u00f3lne, z kt\u00f3rych oboje korzystacie — kino, teatr, kolacja. Wydatki osobiste s\u0105 w panelach bocznych.',
     whoAreYou: 'Kim jeste\u015b?',
     whoAreYouHint: "To tylko wstępnie wypełnia formularze i wybiera Twój motyw. Obydwoje możecie edytować wszystko.",
     close: 'Zamknij',
@@ -213,14 +207,9 @@ const I18N = {
     settleUp: 'Mi\u0119dzy wami',
     settleLine: '{from} do\u0142o\u017cy\u0142(a) si\u0119 o {amount} bardziej w tym miesi\u0105cu — {to} oddaje.',
     settleEven: 'R\u00f3wno — nie ma czego rozlicza\u0107',
-    unplanned: 'Pozaplanowe',
-    planned: 'Planowane',
-    actual: 'Rzeczywiste',
-    date: 'Data',
     description: 'Opis',
     payer: "Kto zapłacił",
     potPaid: 'Podział wg udziału (nikt nie dokładał)',
-    linkItem: 'Zaplanowana pozycja',
     none: '\u2014',
     addExpense: 'Dodaj wydatek',
     open: 'otwarty',
@@ -267,9 +256,9 @@ const I18N = {
     splitOfPlan: '% wspólnych kosztów',
     ofPlan: "kosztów wspólnych",
     ofIncome: '% własnej pensji',
+    ofIncomeHint: 'z własnej pensji',
     fairIncome: "Uczciwy podział = równy % pensji — obie strony płacą po {pct}%",
     splitLabel: 'Podział',
-    splitHint: 'Podziel ten koszt między {a} a {b} — puste = automatyczny podział wg pensji.',
     auto: 'auto',
     sectionProfile: 'Twój profil',
     profileHint: 'Nazwa, motyw i tryb dotyczą tylko Ciebie — druga osoba ma własne.',
@@ -277,7 +266,6 @@ const I18N = {
     newMonth: 'Nowy miesiąc',
     noMonthsYet: 'Brak miesięcy',
     discardChanges: 'Odrzucić niezapisane zmiany ustawień?',
-    confirmDelete: 'Usunąć ten wpis? Tej operacji nie można cofnąć.',
     savedSkipped: 'Zapisano. Pominięto {n} wiersz(y) — potrzebują nazwy i kwoty powyżej 0.',
     edit: 'Edytuj',
     newItem: 'Nowa pozycja',
@@ -302,10 +290,8 @@ const I18N = {
     tipAmount: 'Kwota w walucie aplikacji, np. 120,50. Wpisuj cyfry i jeden przecinek lub kropkę.',
     tipPartnerShare: '{name} dokłada ten % tej osobistej pozycji. Pokazuje się jako osobna linia w podsumowaniu miesiąca i nigdy nie zmienia podziału wspólnego.',
     tipSplitLabel: 'Podziel ten jeden koszt między {a} a {b}. Każdy % to część tej jednej osoby za ten jeden koszt. Puste = automatyczny podział wg pensji; oba pola sumują się do 100%.',
-    tipDate: 'Data wydatku — musi to być prawdziwy dzień bieżącego miesiąca.',
     tipCategory: 'Kategoria wydatku z listy zarządzanej w Ustawieniach.',
     tipDescription: 'Na co był ten wydatek.',
-    tipLinkItem: 'Do której zaplanowanej pozycji zmiennej należy ten wydatek — albo pozaplanowy.',
     tipPayer: 'Kto faktycznie zapłacił: osoba (zapłacone z własnej kieszeni, rozliczane przy zamknięciu) albo nikt — podział wg udziału, każdy płaci swoją część.',
     tipProfile: 'Której osoby dotyczy ten wpis dziennika wolnych środków.',
     tipNote: 'Dowolna notatka do tego wpisu.',
@@ -832,13 +818,13 @@ function itemCard(item, idx, kind, owner) {
     class: 'btn btn-danger',
     text: t('remove'),
     disabled: !canEdit,
-    onclick: () => showConfirm(t('confirmDelete'), () => {
+    onclick: () => {
       state.draft.items.splice(idx, 1);
       renderPlan();
       renderPersonal(1, $('#personal-list-a'));
       renderPersonal(2, $('#personal-list-b'));
       scheduleAutosave();
-    }),
+    },
   });
   const row1 = el('div', { class: 'personal-row' },
     textInput(item.label, (v) => { item.label = v; scheduleAutosave(); }, { disabled: !canEdit }),
@@ -925,11 +911,13 @@ function itemCard(item, idx, kind, owner) {
         scheduleAutosave();
       },
     });
-    /* fair-share suggestion chip on auto items (eligible only); one-click apply */
+    /* fair-share suggestion chip; one-click apply. On auto items always; on items with a
+       custom % only when equalization is impossible (then the chip suggests changing the
+       custom value too). Never applied silently. */
     let sugChip = null;
-    if (pct < 0 && canEdit) {
+    if (canEdit) {
       const sug = suggestFairSplit(state.draft.items, sA, sB);
-      const mine = sug.suggestions.find((x) => x.item === item);
+      const mine = sug.suggestions.find((x) => x.item === item) ?? (sug.adjustments ?? []).find((x) => x.item === item);
       if (mine) {
         const pctA = 100 - mine.pctB;
         sugChip = el('button', {
@@ -938,6 +926,7 @@ function itemCard(item, idx, kind, owner) {
           text: `${pctA}/${mine.pctB}`,
           'aria-label': t('suggestionChip', { a: pctA, b: mine.pctB }),
           'data-idx': String(idx),
+          'data-adj': mine.adjust ? '1' : '0',
           onclick: () => {
             item.partnerSharePct = mine.pctB;
             aInput.value = String(pctA);
@@ -1041,7 +1030,7 @@ function renderPlan() {
         hidden: true,
         onclick: () => {
           const sug = suggestFairSplit(state.draft.items, state.draft.salaries[1] ?? 0, state.draft.salaries[2] ?? 0);
-          for (const x of sug.suggestions) x.item.partnerSharePct = x.pctB;
+          for (const x of [...sug.suggestions, ...(sug.adjustments ?? [])]) x.item.partnerSharePct = x.pctB;
           renderPlan();
           renderPersonal(1, $('#personal-list-a'));
           renderPersonal(2, $('#personal-list-b'));
@@ -1061,7 +1050,6 @@ function renderPlan() {
     const rows = planItemsOf(kind);
     box.replaceChildren(...kids(
       el('h3', {}, tipWrap(kind === 'fixed' ? 'fixedShared' : 'variableShared', kind === 'fixed' ? 'tipFixedShared' : 'tipVariableShared').node),
-      el('p', { class: 'hint', text: t('splitHint', { a: nameA, b: nameB }) }),
       ...rows.map(({ item, idx }) => itemCard(item, idx, kind)),
       rows.length ? null : el('p', { class: 'empty-row' }, tipWrap('noItems', 'tipNoItems').node),
       canEdit
@@ -1088,11 +1076,12 @@ function updateSuggestions() {
   const sA = state.draft.salaries[1] ?? 0;
   const sB = state.draft.salaries[2] ?? 0;
   const sug = suggestFairSplit(state.draft.items, sA, sB);
+  const all = [...sug.suggestions, ...(sug.adjustments ?? [])];
   const nameA = state.profiles[0]?.name ?? 'A';
   const nameB = state.profiles[1]?.name ?? 'B';
   for (const chip of document.querySelectorAll('.sug-chip')) {
     const item = state.draft.items[Number(chip.dataset.idx)];
-    const mine = item && sug.suggestions.find((x) => x.item === item);
+    const mine = item && all.find((x) => x.item === item);
     if (!mine || !editable()) {
       chip.hidden = true;
       continue;
@@ -1108,7 +1097,7 @@ function updateSuggestions() {
   }
   const btn = document.getElementById('btn-apply-suggestions');
   if (btn) {
-    const n = editable() ? sug.suggestions.length : 0;
+    const n = editable() ? all.length : 0;
     btn.hidden = n === 0;
     setText(btn, t('applyAll', { n }));
   }
@@ -1231,12 +1220,13 @@ function shareHint() {
   if (!s) return t('noItems');
   const nameA = state.profiles[0]?.name ?? 'A';
   const nameB = state.profiles[1]?.name ?? 'B';
-  const cA = pct(s.contributions.A, s.sharedPlannedTotal);
-  const cB = pct(s.contributions.B, s.sharedPlannedTotal);
   const iA = s.salaries.A > 0 ? pct(s.contributions.A, s.salaries.A) : null;
   const iB = s.salaries.B > 0 ? pct(s.contributions.B, s.salaries.B) : null;
   const fair = iA != null && iB != null && Math.abs(iA - iB) < 0.05;
-  return `${nameA} ${cA}% · ${nameB} ${cB}% ${t('ofPlan')} — ${fair && iA != null ? t('fairIncome', { pct: iA }) : `${nameA} ${pctStr(iA)} · ${nameB} ${pctStr(iB)}`}`;
+  /* one short line: only % of own salary here; the % of shared costs lives on the split bar */
+  return fair && iA != null
+    ? t('fairIncome', { pct: iA })
+    : `${nameA} ${pctStr(iA)} · ${nameB} ${pctStr(iB)} ${t('ofIncomeHint')}`;
 }
 
 function pctStr(v) {
@@ -1272,7 +1262,7 @@ function renderFigures() {
   const iA = s.salaries.A > 0 ? pct(s.contributions.A, s.salaries.A) : null;
   const iB = s.salaries.B > 0 ? pct(s.contributions.B, s.salaries.B) : null;
   const fair = iA != null && iB != null && Math.abs(iA - iB) < 0.05;
-  const fairHint = el('p', { class: 'hint', text: fair && iA != null ? t('fairIncome', { pct: iA }) : `${names.A} ${pctStr(iA)} · ${names.B} ${pctStr(iB)}` });
+  const fairHint = el('p', { class: 'hint', text: fair && iA != null ? t('fairIncome', { pct: iA }) : `${names.A} ${pctStr(iA)} · ${names.B} ${pctStr(iB)} ${t('ofIncomeHint')}` });
   attachTip(fairHint, 'tipFairIncome', { a: names.A, b: names.B, ia: pctStr(iA), ib: pctStr(iB) });
   const planBlock = el('div', { class: 'split-block' },
     el('div', { class: 'block-head' },
@@ -1321,11 +1311,12 @@ function renderFigures() {
 let editingExpenseId = null;
 
 function renderExpenses() {
-  const s = liveSummary() ?? state.month.summary;
   const canEdit = editable();
   const form = $('#expense-form');
   form.replaceChildren();
   if (canEdit) {
+    /* The API still requires a date within the month — default to today clamped into the
+       month; the date is not a user-facing field anymore. */
     const [yr, mo] = state.month.ym.split('-').map(Number);
     const lastDay = new Date(Date.UTC(yr, mo, 0)).getUTCDate();
     const lastD2 = String(lastDay).padStart(2, '0');
@@ -1333,7 +1324,6 @@ function renderExpenses() {
     const todayIso = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
     const defDate = todayIso >= `${state.month.ym}-01` && todayIso <= `${state.month.ym}-${lastD2}` ? todayIso : `${state.month.ym}-01`;
     const editing = state.month.expenses.find((x) => x.id === editingExpenseId) ?? null;
-    const dateInput = el('input', { id: 'ef-date', type: 'date', value: editing?.date ?? defDate, min: `${state.month.ym}-01`, max: `${state.month.ym}-${lastD2}`, 'aria-label': t('date') });
     const descInput = el('input', { id: 'ef-desc', type: 'text', placeholder: t('description'), 'aria-label': t('description'), value: editing?.description ?? '' });
     const amountInput = el('input', { id: 'ef-amount', type: 'text', inputmode: 'decimal', class: 'num-input', placeholder: t('amount'), 'aria-label': t('amount'), value: editing ? formatMoneyInput(editing.amountCents) : '' });
     amountInput.addEventListener('input', (e) => {
@@ -1343,45 +1333,41 @@ function renderExpenses() {
     amountInput.addEventListener('blur', (e) => {
       e.target.value = formatMoneyInput(parseFlexibleMoney(e.target.value));
     });
-    const itemSelect = el('select', { id: 'ef-item' },
-      el('option', { value: '', text: `${t('linkItem')}: ${t('unplanned')}` }),
-      ...state.month.items
-        .filter((i) => i.kind === 'variable')
-        .map((i) => el('option', { value: i.id, text: i.label }))
+    /* category is free text with suggestions — typing a new name creates the category */
+    const catInput = el('input', { id: 'ef-category', type: 'text', list: 'ef-cat-list', placeholder: t('category'), 'aria-label': t('category'), value: editing?.category ?? '' });
+    const catList = el('datalist', { id: 'ef-cat-list' },
+      ...state.settings.categories.map((c) => el('option', { value: c }))
     );
     const payerSelect = el('select', { id: 'ef-payer' },
       el('option', { value: '', text: `${t('payer')}: ${t('potPaid')}` }),
       ...state.profiles.map((p) => el('option', { value: p.id, text: p.name }))
     );
-    const categorySelect = el('select', { id: 'ef-category' },
-      ...state.settings.categories.map((c) => el('option', { value: c, text: c }))
-    );
-    if (editing) {
-      itemSelect.value = editing.planItemId != null ? String(editing.planItemId) : '';
-      payerSelect.value = editing.payerProfileId != null ? String(editing.payerProfileId) : '';
-      categorySelect.value = editing.category ?? '';
-    }
+    if (editing) payerSelect.value = editing.payerProfileId != null ? String(editing.payerProfileId) : '';
     const submit = async () => {
+      const category = catInput.value.trim();
       const payload = {
-        date: dateInput.value,
-        category: categorySelect.value,
+        category,
         description: descInput.value,
         amountCents: parseMoney(amountInput.value),
-        planItemId: itemSelect.value ? Number(itemSelect.value) : null,
+        planItemId: null,
         payerProfileId: payerSelect.value ? Number(payerSelect.value) : null,
       };
       try {
+        if (category && !state.settings.categories.some((c) => c.toLowerCase() === category.toLowerCase())) {
+          await api('PUT', '/api/settings', { categories: [...state.settings.categories, category] });
+          await refreshState();
+        }
         if (editingExpenseId) {
           state.month = await api('PUT', `/api/expenses/${editingExpenseId}`, payload);
         } else {
           state.month = await api('POST', `/api/months/${state.month.ym}/expenses`, payload);
         }
-        const keep = { 'ef-date': dateInput.value, 'ef-category': categorySelect.value, 'ef-payer': payerSelect.value, 'ef-item': itemSelect.value };
+        const keep = { 'ef-category': category, 'ef-payer': payerSelect.value };
         editingExpenseId = null;
         renderMonth();
         for (const [id, v] of Object.entries(keep)) {
           const n = document.getElementById(id);
-          if (n && (n.tagName !== 'SELECT' || [...n.options].some((o) => o.value === v))) n.value = v;
+          if (n) n.value = v;
         }
       } catch (err) {
         notifyError(err);
@@ -1389,11 +1375,9 @@ function renderExpenses() {
     };
     form.append(
       el('div', { class: 'form-grid' },
-        field('date', dateInput, 'tipDate'),
-        field('category', categorySelect, 'tipCategory'),
+        field('category', catInput, 'tipCategory'),
         field('description', descInput, 'tipDescription'),
         field('amount', amountInput, 'tipAmount'),
-        field('linkItem', itemSelect, 'tipLinkItem'),
         field('payer', payerSelect, 'tipPayer'),
         el('button', {
           type: 'button',
@@ -1404,15 +1388,19 @@ function renderExpenses() {
         editing
           ? el('button', { type: 'button', class: 'btn', text: t('cancel'), onclick: () => { editingExpenseId = null; renderExpenses(); } })
           : null
-      )
+      ),
+      catList
     );
   }
 
   const totals = { A: 0, B: 0, pot: 0 };
+  const byCat = new Map();
   for (const e of state.month.expenses) {
     if (e.payerProfileId === 1) totals.A += e.amountCents;
     else if (e.payerProfileId === 2) totals.B += e.amountCents;
     else totals.pot += e.amountCents;
+    const key = e.category || t('none');
+    byCat.set(key, (byCat.get(key) ?? 0) + e.amountCents);
   }
   const strip = el('div', { class: 'paid-strip' },
     el('span', { class: 'paid-chip' },
@@ -1425,23 +1413,30 @@ function renderExpenses() {
       el('span', { text: t('pot') }),
       el('span', { class: 'money', text: fmtMoney(totals.pot) }))
   );
+  /* per-category totals: every logged spending is counted by category */
+  const catStrip = el('div', { class: 'paid-strip' },
+    ...[...byCat.entries()].map(([cat, sum]) =>
+      el('span', { class: 'paid-chip' },
+        el('i', { class: 'cat-dot', style: `background:${colorForCategory(cat)}`, 'aria-hidden': 'true' }),
+        el('span', { text: cat }),
+        el('span', { class: 'money', text: fmtMoney(sum) })))
+  );
 
   const list = $('#expense-list');
-  list.replaceChildren(
+  list.replaceChildren(...kids(
+    el('p', { class: 'hint', text: t('spendingLogHint') }),
     strip,
+    byCat.size ? catStrip : null,
     itemTable(
-      [t('date'), t('category'), t('description'), t('amount'), t('linkItem'), t('payer'), ''],
+      [t('category'), t('description'), t('amount'), t('payer'), ''],
       state.month.expenses.map((e) => {
-        const linked = state.month.items.find((i) => i.id === e.planItemId);
         const payer = state.profiles.find((p) => p.id === e.payerProfileId);
         return el('tr', {},
-          el('td', { text: fmtDate(e.date) }),
           el('td', {}, el('span', { class: 'cat-chip' },
             el('i', { class: 'cat-dot', style: `background:${colorForCategory(e.category)}`, 'aria-hidden': 'true' }),
             e.category || t('none'))),
           el('td', { text: e.description }),
           el('td', { class: 'num money', text: fmtMoney(e.amountCents) }),
-          el('td', { text: linked?.label ?? t('unplanned') }),
           el('td', { text: payer?.name ?? t('potPaid') }),
           el('td', {}, ...kids(
             canEdit
@@ -1457,7 +1452,7 @@ function renderExpenses() {
                   type: 'button',
                   class: 'btn btn-danger',
                   text: t('remove'),
-                  onclick: () => showConfirm(t('confirmDelete'), async () => {
+                  onclick: (e) => withBusy(e.currentTarget, async () => {
                     try {
                       state.month = await api('DELETE', `/api/expenses/${e.id}`);
                       renderMonth();
@@ -1470,28 +1465,8 @@ function renderExpenses() {
           ))
         );
       }), null, tipWrap('noExpenses', 'tipNoExpenses').node
-    ),
-    el('h3', { text: `${t('planned')} / ${t('actual')}` }),
-    itemTable(
-      [t('label'), t('planned'), t('actual'), t('unplanned')],
-      [
-        ...s.planVsActual.map((i) =>
-          el('tr', {},
-            el('td', { text: i.label }),
-            el('td', { class: 'num money', text: fmtMoney(i.planned) }),
-            el('td', { class: 'num money', text: fmtMoney(i.actual) }),
-            el('td', {})
-          )
-        ),
-        el('tr', {},
-          el('td', { text: t('unplanned') }),
-          el('td', {}),
-          el('td', { class: 'num money', text: fmtMoney(s.unplannedTotal) }),
-          el('td', {})
-        ),
-      ]
     )
-  );
+  ));
 }
 
 /* ---------- month close (US5) ---------- */
@@ -1816,7 +1791,7 @@ async function renderLeftovers(historyData) {
                   type: 'button',
                   class: 'btn btn-danger',
                   text: t('remove'),
-                  onclick: () => showConfirm(t('confirmDelete'), async () => {
+                  onclick: (e) => withBusy(e.currentTarget, async () => {
                     try {
                       const { leftovers } = await api('DELETE', `/api/leftovers/${entry.id}`);
                       renderLeftovers({ ...data, leftovers });

@@ -26,13 +26,34 @@ export function suggestFairSplit(items, salaryA, salaryB) {
     }
   }
   const autoTotal = auto.reduce((s, i) => s + i.amountCents, 0);
-  if (autoTotal <= 0) return { suggestions: [], exact: true, clamped: false };
+  if (autoTotal <= 0 && manualA === fair.a) return { suggestions: [], adjustments: [], exact: true, clamped: false };
   let targetA = fair.a - manualA;
   const clamped = targetA < 0 || targetA > autoTotal;
   targetA = Math.max(0, Math.min(autoTotal, targetA));
-  const pctA = Math.max(0, Math.min(100, Math.round((targetA * 100) / autoTotal)));
-  const suggestions = auto.map((item) => ({ item, pctB: 100 - pctA }));
-  return { suggestions, exact: !clamped, clamped, pctA, targetA, autoTotal };
+  const pctA = autoTotal > 0 ? Math.max(0, Math.min(100, Math.round((targetA * 100) / autoTotal))) : 0;
+  const suggestions = auto.map((item) => ({ item, pctB: 100 - pctA, adjust: false }));
+  /* Impossible to equalize with auto items alone: also suggest changing the custom
+     (manual) values — distribute the remaining correction over them, proportional to
+     amount, each kept within 0-100. Still only a suggestion, never auto-applied. */
+  const adjustments = [];
+  if (clamped) {
+    const manual = shared.filter((i) => i.partnerSharePct != null && i.partnerSharePct >= 0);
+    const manualTotal = manual.reduce((s, i) => s + i.amountCents, 0);
+    const residual = fair.a - targetA - manualA; /* A-amount still off after pinning auto items */
+    if (manualTotal > 0 && residual !== 0) {
+      let assigned = 0;
+      manual.forEach((item, k) => {
+        const curA = item.amountCents - Math.floor((item.amountCents * item.partnerSharePct) / 100);
+        let newA = k === manual.length - 1
+          ? Math.max(0, Math.min(item.amountCents, curA + residual - assigned))
+          : Math.max(0, Math.min(item.amountCents, Math.round(curA + (residual * item.amountCents) / manualTotal)));
+        assigned += newA - curA;
+        const pctB = Math.max(0, Math.min(100, Math.round(((item.amountCents - newA) * 100) / item.amountCents)));
+        if (pctB !== item.partnerSharePct) adjustments.push({ item, pctB, adjust: true });
+      });
+    }
+  }
+  return { suggestions, adjustments, exact: !clamped, clamped, pctA, targetA, autoTotal };
 }
 
 /* ---------- spinner-free numeric entry (pure, shared client/server) ----------

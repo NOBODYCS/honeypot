@@ -204,10 +204,20 @@ change, a semantic version bump (MAJOR for removed/redefined principles, MINOR f
 principles/sections, PATCH for clarifications), and a change-log entry. All PRs must verify
 compliance; any complexity beyond the principles above must be justified in the PR.
 
-**Version**: 2.0.1 | **Ratified**: 2026-11-17 | **Last Amended**: 2026-11-18
+**Version**: 2.1.0 | **Ratified**: 2026-11-17 | **Last Amended**: 2026-11-18
 
 ## Change Log
 
+- **2.1.0 (2026-11-18)** — MINOR: owner follow-ups. (a) Fair-share suggestions are fully live:
+  chips appear as soon as an item is added, recompute on every keystroke, and when equalization
+  is impossible they also propose adjusting the custom % values (still one-click, never silent).
+  (b) Deletes no longer ask for confirmation (only close-month and settings-dirty still do).
+  (c) The salary hint is one short line (% of own salary only; % of shared costs stays on the
+  split bar); the hint paragraphs under Fixed/Variable sections are removed (the Split tooltip
+  covers it). (d) No underlines on hoverable elements. (e) No planned/actual split in the UI —
+  the app states what reality should look like. (f) Spending log reworked: no date or planned-item
+  fields, categories are creatable from the form (persisted to settings), per-category totals
+  strip, log is for shared spending only. 72/72 tests pass.
 - **2.0.1 (2026-11-18)** — PATCH: owner principle recorded in Principle III — the app reflects
   the ideal and reality follows it: what is set in the app (splits, payers) is the source of
   truth for who pays whom; anything not entered there is matched to the app afterwards, not

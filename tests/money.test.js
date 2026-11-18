@@ -350,7 +350,37 @@ test('suggestions: no suggestions when salaries are 0 or no auto items; clamped 
   );
   assert.equal(s.clamped, true);
   assert.equal(s.suggestions[0].pctB, 100, 'closest possible: auto item goes fully to B');
+  // clamped -> adjustments propose changing the custom value too (never auto-applied)
+  assert.ok(Array.isArray(s.adjustments) && s.adjustments.length === 1, 'clamped case must suggest adjusting the custom item');
   // personal items are never eligible
   const p = suggestFairSplit([{ kind: 'personal', amountCents: 5000, ownerProfileId: 1, partnerSharePct: -1 }], 100000, 100000);
   assert.deepEqual(p.suggestions, []);
+});
+
+test('suggestions: applying suggestions + adjustments never worsens the gap and stays exact (R15)', () => {
+  for (let i = 0; i < 500; i++) {
+    const salaryA = randomCents(500000);
+    const salaryB = randomCents(500000);
+    const items = [
+      { kind: 'fixed', amountCents: randomCents(90000), partnerSharePct: 0 }, // extreme custom: 100% A
+      { kind: 'variable', amountCents: randomCents(20000), partnerSharePct: -1 },
+      { kind: 'variable', amountCents: randomCents(20000), partnerSharePct: Math.floor(Math.random() * 101) },
+    ];
+    const total = items.reduce((s, x) => s + x.amountCents, 0);
+    const s = suggestFairSplit(items, salaryA, salaryB);
+    for (const x of [...s.suggestions, ...(s.adjustments ?? [])]) x.item.partnerSharePct = x.pctB;
+    const sum = computeSummary({ salaryA, salaryB, items, expenses: [] });
+    assert.equal(sum.contributions.A + sum.contributions.B, total, 'R15 exact');
+    const iA = (sum.contributions.A / salaryA) * 100;
+    const iB = (sum.contributions.B / salaryB) * 100;
+    const gapAfter = Math.abs(iA - iB);
+    const bound = 2 / (1 / salaryA + 1 / salaryB);
+    if (!s.clamped && total <= bound) {
+      assert.ok(gapAfter <= 1, `within 1 point when amounts allow (not clamped): A=${iA.toFixed(2)} B=${iB.toFixed(2)}`);
+    }
+    /* clamped = genuinely impossible: adjustments for custom items must exist and stay 0-100 */
+    if (s.clamped) {
+      for (const a of s.adjustments) assert.ok(a.pctB >= 0 && a.pctB <= 100 && a.adjust === true);
+    }
+  }
 });
