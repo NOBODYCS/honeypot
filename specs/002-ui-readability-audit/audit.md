@@ -215,6 +215,20 @@ contrast re-measured from the final stylesheet tokens (all text pairs >= 4.5:1, 
   their actual % of own income; fairness note shows when both are equal.
 - Personal expenses render as compact cards in the side panels — no horizontal scrolling.
 
+## Round 7 — prevention & detection system (2026-11-18)
+
+So UI/UX regressions are caught without anyone spelling them out:
+- `tests/ui-static.test.js` (runs in `npm test` + CI): i18n parity/placeholders/dead keys/
+  hardcoded strings; WCAG 2.2 AA contrast for EVERY preset × light/dark token pair; every HTML
+  button id wired in app.js; dialog close + backdrop; scaling guards (no fixed control heights,
+  no nowrap buttons, zoom allowed, text-scale meta, coarse targets); theme per-profile (no
+  localStorage), settings scoped to current profile, single Save; autosave/liveSummary wiring;
+  personal cards not tables; per-item pct migration+validation.
+- `.github/workflows/ci.yml`: runs the suite on push/PR.
+- `.github/PULL_REQUEST_TEMPLATE.md`: manual visual checklist (states, focus, 200% zoom,
+  320px reflow, dialogs fit, per-side info, % labels + tips).
+- Constitution 1.5.0 encodes this as Principle X.
+
 ## Guidelines checked against
 - WCAG 2.2 (W3C): SC 1.4.3 contrast ≥ 4.5:1 normal / 3:1 large text; SC 1.4.11 non-text
   ≥ 3:1; SC 2.4.7 visible focus; SC 2.5.8 target size ≥ 24×24px (44×44px recommended —

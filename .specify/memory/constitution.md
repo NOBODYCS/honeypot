@@ -67,6 +67,15 @@ single-file SQLite, static frontend with vanilla JS. No npm packages, no framewo
 step.
 
 ### X. Readability and working controls (NON-NEGOTIABLE)
+- UI/UX regressions are PREVENTED and DETECTED automatically, not by memory:
+  `tests/ui-static.test.js` (run by `npm test` and CI on every push/PR) enforces i18n parity
+  and placeholder/dead-key checks, WCAG 2.2 AA contrast for every preset × light/dark token
+  pair, button-handler wiring for every visible button, scaling rules (no fixed control
+  heights, no nowrap buttons, zoom allowed, text-scale opt-in, coarse-pointer targets), theme
+  scoping (per partner profile, never localStorage; settings edit only the current profile),
+  single-Save settings, autosave/live-calc wiring, and card layout for side panels. The PR
+  template (`.github/PULL_REQUEST_TEMPLATE.md`) requires the manual visual pass. New UI rules
+  MUST be encoded there, not just chatted about.
 - Every text/background pair MUST meet WCAG 2.2 AA: >= 4.5:1 for normal text, >= 3:1 for
   large text (>= 24px, or >= 18.66px bold) and for non-text UI boundaries (input borders,
   focus rings, icons) — SC 1.4.3 and 1.4.11, measured with the WCAG relative-luminance
@@ -140,10 +149,14 @@ change, a semantic version bump (MAJOR for removed/redefined principles, MINOR f
 principles/sections, PATCH for clarifications), and a change-log entry. All PRs must verify
 compliance; any complexity beyond the principles above must be justified in the PR.
 
-**Version**: 1.4.0 | **Ratified**: 2026-11-17 | **Last Amended**: 2026-11-18
+**Version**: 1.5.0 | **Ratified**: 2026-11-17 | **Last Amended**: 2026-11-18
 
 ## Change Log
 
+- **1.5.0 (2026-11-18)** — MINOR: added Principle X automation clause: UI/UX guards as
+  tests (`tests/ui-static.test.js`: i18n, contrast per preset×mode, button wiring, scaling,
+  scoping, autosave) + CI workflow + PR template checklist, so regressions are caught without
+  anyone spelling them out.
 - **1.4.0 (2026-11-18)** — MINOR: theme confirmed as per-partner-profile (not per browser);
   Settings scoped to the current user only, single Save button. Live calculations: figures
   recompute from the draft on every keystroke + debounced autosave (no plan Save button).
