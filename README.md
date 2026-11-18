@@ -11,7 +11,8 @@ leftover money. Nothing rolls over — every month starts fresh.
 ## The money model
 
 - Shared costs (fixed like rent/utilities + variable like groceries) are split by salary
-  share: `share(P) = salary(P) / (salaryA + salaryB)`.
+  share: `share(P) = salary(P) / (salaryA + salaryB)`. Each shared item can also override the
+  split per cost (its own A%/B%, kept in sync to 100; blank = salary split).
 - After payday, each person transfers their calculated share into a shared pot; the pot pays
   all shared costs. If someone fronted a bill personally, they mark it as payer, and the close
   summary settles it — the "who owes whom" line always adds up exactly.
@@ -26,16 +27,18 @@ leftover money. Nothing rolls over — every month starts fresh.
 
 ## Features
 
-- **One screen, everything on it:** header (profile switch, month, panels, close), a center
-  column with the month plan, live figures, and the spending log, and mirrored side panels
-  with each partner's name and personal expenses list. Every field is editable by either
-  partner at any time.
+- **One screen, everything on it:** header (profile switch, month, New month, panels, close),
+  a center column with the month plan, live figures, and the spending log, and mirrored side
+  panels with each partner's name and personal expenses list. Every field is editable by either
+  partner at any time; plan edits autosave live (figures recompute on every keystroke), and
+  expenses can be edited in place or deleted (with a confirm).
 - Profile pick remembered per browser — a convenience, not a login (the app is LAN-only, no
   passwords, by design).
 - Month close: contributions vs actually paid, leftovers, pot balance, settle-up line, and the
   personal-support breakdown; the month locks and appears in read-only History.
-- Leftover log (most recently closed month), settings (names, themes, currency, categories,
-  language).
+- Leftover log (most recently closed month), settings in labeled sections — Your profile
+  (name, theme presets, light/dark — per profile only), App (currency, language), Expense
+  categories — with a single Save button.
 - **Per-profile theme presets** picked from Settings (six families: paper, ink, sunrise, berry,
   ocean, contrast — each with a light AND a dark mode, changing colors, fonts, radii, density and
   shadows together) via the `data-theme` + `data-mode` attributes — styles only, the layout is
