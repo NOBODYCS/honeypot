@@ -509,6 +509,41 @@ select {
   background: var(--accent);
 }
 
+.badge-balance {
+  background: var(--surface-2);
+  color: var(--ink-2);
+}
+
+.badge-balance::before {
+  display: none;
+}
+
+/* ---- paid strip ---- */
+
+.paid-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+  margin-bottom: var(--sp-4);
+}
+
+.paid-chip {
+  display: inline-flex;
+  align-items: baseline;
+  gap: var(--sp-2);
+  padding: var(--sp-1) var(--sp-3);
+  border-radius: var(--radius-s);
+  background: var(--surface-2);
+  font-size: var(--font-size-micro);
+  color: var(--ink-3);
+}
+
+.paid-chip .money {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--fg);
+}
+
 /* ---- money ---- */
 
 .money {

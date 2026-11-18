@@ -85,6 +85,9 @@ const I18N = {
     noItems: 'Nothing planned yet.',
     noExpenses: 'No spending logged yet.',
     nothingYet: 'Nothing here yet.',
+    balance: 'Balance',
+    pot: 'Pot',
+    paidByStrip: 'Paid by {name}',
   },
   pl: {
     profileLabel: 'Aktualny profil',
@@ -170,6 +173,9 @@ const I18N = {
     noItems: 'Jeszcze nic nie zaplanowano.',
     noExpenses: 'Nie zapisano jeszcze \u017cadnych wydatk\u00f3w.',
     nothingYet: 'Jeszcze nic tu nie ma.',
+    balance: 'Bilans',
+    pot: 'Pula',
+    paidByStrip: 'Zapłacił(a): {name}',
   },
 };
 
@@ -314,6 +320,17 @@ function renderHeader() {
     status.textContent = month.status === 'open' ? t('open') : t('closed');
   } else {
     status.hidden = true;
+  }
+  const balance = $('#balance-badge');
+  const settle = state.month?.summary?.settle ?? null;
+  if (state.month && settle) {
+    const offset = Math.abs(settle.A);
+    balance.hidden = false;
+    balance.textContent = offset === 0
+      ? `${t('balance')} ${fmtMoney(0)}`
+      : `${t('balance')} ${fmtMoney(offset)}`;
+  } else {
+    balance.hidden = true;
   }
 }
 
@@ -678,8 +695,27 @@ function renderExpenses() {
     );
   }
 
+  const totals = { A: 0, B: 0, pot: 0 };
+  for (const e of state.month.expenses) {
+    if (e.payerProfileId === 1) totals.A += e.amountCents;
+    else if (e.payerProfileId === 2) totals.B += e.amountCents;
+    else totals.pot += e.amountCents;
+  }
+  const strip = el('div', { class: 'paid-strip' },
+    el('span', { class: 'paid-chip' },
+      el('span', { text: t('paidByStrip', { name: state.profiles[0]?.name ?? 'A' }) }),
+      el('span', { class: 'money', text: fmtMoney(totals.A) })),
+    el('span', { class: 'paid-chip' },
+      el('span', { text: t('paidByStrip', { name: state.profiles[1]?.name ?? 'B' }) }),
+      el('span', { class: 'money', text: fmtMoney(totals.B) })),
+    el('span', { class: 'paid-chip' },
+      el('span', { text: t('pot') }),
+      el('span', { class: 'money', text: fmtMoney(totals.pot) }))
+  );
+
   const list = $('#expense-list');
   list.replaceChildren(
+    strip,
     itemTable(
       [t('date'), t('description'), t('amount'), t('linkItem'), t('payer'), ''],
       state.month.expenses.map((e) => {
