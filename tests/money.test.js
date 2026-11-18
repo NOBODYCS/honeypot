@@ -5,6 +5,10 @@ import {
   personalOut,
   computeSummary,
   settleUp,
+  sanitizeNumericInput,
+  parseFlexibleMoney,
+  formatMoneyInput,
+  formatPctInput,
 } from '../src/money.js';
 
 function randomCents(max) {
@@ -219,4 +223,54 @@ test('unset partnerSharePct (-1) behaves exactly like the old salary split', () 
   const direct = splitBySalary(s.sharedPlannedTotal, 500000, 300000);
   assert.equal(s.contributions.A, direct.a);
   assert.equal(s.contributions.B, direct.b);
+});
+
+/* ---------- spinner-free numeric entry (Change 2) ---------- */
+
+test('numeric entry: sanitize drops letters/symbols, keeps digits and ONE separator', () => {
+  assert.equal(sanitizeNumericInput('abc12x3', { decimal: true }), '123');
+  assert.equal(sanitizeNumericInput('12.3.4', { decimal: true }), '12.34');
+  assert.equal(sanitizeNumericInput('12,3,4', { decimal: true }), '12,34');
+  assert.equal(sanitizeNumericInput('1,2.3', { decimal: true }), '1,23');
+  assert.equal(sanitizeNumericInput('-,5-', { decimal: true }), ',5'); // minus dropped, separator kept
+  assert.equal(sanitizeNumericInput('12,5', { decimal: true }), '12,5');
+  assert.equal(sanitizeNumericInput('', { decimal: true }), '');
+  assert.equal(sanitizeNumericInput('1.2', { decimal: false }), '12');
+  assert.equal(sanitizeNumericInput('1,2', { decimal: false }), '12');
+});
+
+test('numeric entry: "." and "," both parse to the same integer cents (normalized internally)', () => {
+  assert.equal(parseFlexibleMoney('12.50'), 1250);
+  assert.equal(parseFlexibleMoney('12,50'), 1250);
+  assert.equal(parseFlexibleMoney('0,05'), 5);
+  assert.equal(parseFlexibleMoney(''), 0);
+  assert.equal(parseFlexibleMoney('abc'), 0);
+  assert.equal(parseFlexibleMoney('1.006'), 101); // Math.round on cents, same as the old parseMoney
+  for (let i = 0; i < 200; i++) {
+    const a = Math.floor(Math.random() * 100000) / 100;
+    const dot = a.toFixed(2);
+    const comma = dot.replace('.', ',');
+    assert.equal(parseFlexibleMoney(dot), parseFlexibleMoney(comma), `${dot} vs ${comma}`);
+    assert.ok(Number.isInteger(parseFlexibleMoney(dot)));
+  }
+});
+
+test('numeric entry: blur format round-trips (focus/blur keeps the formatted value, reopening shows the same)', () => {
+  for (const cents of [0, 1, 5, 99, 100, 12345, 999999999]) {
+    const formatted = formatMoneyInput(cents);
+    assert.match(formatted, /^\d+\.\d{2}$/, 'money snap = one separator, 2 decimals');
+    assert.equal(parseFlexibleMoney(formatted), cents, `round-trip of ${cents}`);
+  }
+  assert.equal(formatMoneyInput(parseFlexibleMoney('12,5')), '12.50');
+  assert.equal(formatMoneyInput(parseFlexibleMoney('abc')), '0.00');
+});
+
+test('numeric entry: percent blur snap is an integer 0-100, empty stays empty (auto)', () => {
+  assert.equal(formatPctInput('37'), '37');
+  assert.equal(formatPctInput('37.6'), '38');
+  assert.equal(formatPctInput('150'), '100');
+  assert.equal(formatPctInput('-5'), '0');
+  assert.equal(formatPctInput(''), '');
+  assert.equal(formatPctInput(null), '');
+  assert.equal(formatPctInput('abc'), '0');
 });

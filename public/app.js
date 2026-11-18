@@ -1,4 +1,4 @@
-import { computeSummary } from '/shared/money.js';
+import { computeSummary, sanitizeNumericInput, parseFlexibleMoney, formatMoneyInput, formatPctInput } from '/shared/money.js';
 
 /* Honeypot frontend — vanilla JS, no build step. One screen + slide-over dialogs. */
 
@@ -662,20 +662,29 @@ state.mostRecentClosedYm = null;
 /* ---------- month view ---------- */
 
 function parseMoney(str) {
-  const n = Number.parseFloat(str);
-  return Number.isFinite(n) ? Math.round(n * 100) : 0;
+  return parseFlexibleMoney(str);
 }
 
-function moneyInput(cents, oninput, { disabled = false } = {}) {
+/* Spinner-free numeric field: plain text input, live filtering on every keystroke/paste,
+   blur snaps money to 2 decimals. The draft only ever receives parsed integer cents. */
+function moneyInput(cents, oninput, { disabled = false, aria } = {}) {
   return el('input', {
-    type: 'number',
-    step: '0.01',
-    min: '0',
+    type: 'text',
     inputmode: 'decimal',
-    'aria-label': t('amount'),
-    value: ((cents ?? 0) / 100).toFixed(2),
+    class: 'num-input',
+    'aria-label': aria ?? t('amount'),
+    value: formatMoneyInput(cents),
     disabled,
-    oninput: (e) => oninput(parseMoney(e.target.value)),
+    oninput: (e) => {
+      const clean = sanitizeNumericInput(e.target.value, { decimal: true });
+      if (clean !== e.target.value) e.target.value = clean;
+      oninput(parseFlexibleMoney(clean));
+    },
+    onblur: (e) => {
+      const v = parseFlexibleMoney(e.target.value);
+      e.target.value = formatMoneyInput(v);
+      oninput(v);
+    },
   });
 }
 
@@ -794,16 +803,23 @@ function clampPct(v) {
 
 function pctInput({ value, placeholder, aria, side, disabled, oninput }) {
   return el('input', {
-    type: 'number',
-    min: '0',
-    max: '100',
+    type: 'text',
     inputmode: 'numeric',
+    class: 'num-input',
     placeholder: placeholder || undefined,
     'aria-label': aria,
     'data-side': side,
     value,
     disabled,
-    oninput,
+    oninput: (e) => {
+      const clean = sanitizeNumericInput(e.target.value, { decimal: false });
+      if (clean !== e.target.value) e.target.value = clean;
+      oninput(e);
+    },
+    onblur: (e) => {
+      e.target.value = formatPctInput(e.target.value);
+      oninput(e);
+    },
   });
 }
 
@@ -1261,7 +1277,14 @@ function renderExpenses() {
     const editing = state.month.expenses.find((x) => x.id === editingExpenseId) ?? null;
     const dateInput = el('input', { id: 'ef-date', type: 'date', value: editing?.date ?? defDate, min: `${state.month.ym}-01`, max: `${state.month.ym}-${lastD2}`, 'aria-label': t('date') });
     const descInput = el('input', { id: 'ef-desc', type: 'text', placeholder: t('description'), 'aria-label': t('description'), value: editing?.description ?? '' });
-    const amountInput = el('input', { id: 'ef-amount', type: 'number', step: '0.01', min: '0.01', inputmode: 'decimal', placeholder: t('amount'), 'aria-label': t('amount'), value: editing ? (editing.amountCents / 100).toFixed(2) : '' });
+    const amountInput = el('input', { id: 'ef-amount', type: 'text', inputmode: 'decimal', class: 'num-input', placeholder: t('amount'), 'aria-label': t('amount'), value: editing ? formatMoneyInput(editing.amountCents) : '' });
+    amountInput.addEventListener('input', (e) => {
+      const clean = sanitizeNumericInput(e.target.value, { decimal: true });
+      if (clean !== e.target.value) e.target.value = clean;
+    });
+    amountInput.addEventListener('blur', (e) => {
+      e.target.value = formatMoneyInput(parseFlexibleMoney(e.target.value));
+    });
     const itemSelect = el('select', { id: 'ef-item' },
       el('option', { value: '', text: `${t('linkItem')}: ${t('unplanned')}` }),
       ...state.month.items
@@ -1678,7 +1701,14 @@ async function renderLeftovers(historyData) {
     }
   }
   const editableMonth = ym === state.mostRecentClosedYm;
-  const amountInput = el('input', { type: 'number', step: '0.01', min: '0.01', inputmode: 'decimal', placeholder: t('amount'), 'aria-label': t('amount') });
+  const amountInput = el('input', { type: 'text', inputmode: 'decimal', class: 'num-input', placeholder: t('amount'), 'aria-label': t('amount') });
+  amountInput.addEventListener('input', (e) => {
+    const clean = sanitizeNumericInput(e.target.value, { decimal: true });
+    if (clean !== e.target.value) e.target.value = clean;
+  });
+  amountInput.addEventListener('blur', (e) => {
+    e.target.value = formatMoneyInput(parseFlexibleMoney(e.target.value));
+  });
   const noteInput = el('input', { type: 'text', placeholder: t('note'), 'aria-label': t('note') });
   const profileSelect = el('select', {},
     ...state.profiles.map((p) => el('option', { value: p.id, text: p.name }))

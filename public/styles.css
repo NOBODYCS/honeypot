@@ -569,7 +569,7 @@ input, select, textarea {
   min-width: 0;
 }
 
-input[type='text'], input[type='number'], input[type='date'], select, textarea {
+input[type='text'], input[type='date'], select, textarea {
   min-height: var(--control-h);
   padding: 0 var(--sp-3);
   background: var(--field-bg);
@@ -593,7 +593,8 @@ input:focus-visible, select:focus-visible, textarea:focus-visible {
   cursor: not-allowed;
 }
 
-input[type='number'] {
+/* numeric entry is spinner-free: plain text inputs with inputmode (class num-input) */
+input.num-input {
   font-family: var(--font-mono);
   font-variant-numeric: tabular-nums;
   text-align: right;
@@ -1015,7 +1016,7 @@ figure.fig .money {
   align-self: center;
 }
 
-.split-row input[type='number'] {
+.split-row input.num-input {
   width: 4.5rem;
   flex-shrink: 0;
 }
@@ -1030,7 +1031,7 @@ figure.fig .money {
   min-width: 0;
 }
 
-.personal-row input[type='number'] {
+.personal-row input.num-input {
   width: 7.5rem;
   min-width: 5.5rem;
   flex-shrink: 1;

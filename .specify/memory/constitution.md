@@ -199,10 +199,18 @@ change, a semantic version bump (MAJOR for removed/redefined principles, MINOR f
 principles/sections, PATCH for clarifications), and a change-log entry. All PRs must verify
 compliance; any complexity beyond the principles above must be justified in the PR.
 
-**Version**: 1.10.0 | **Ratified**: 2026-11-17 | **Last Amended**: 2026-11-18
+**Version**: 1.11.0 | **Ratified**: 2026-11-17 | **Last Amended**: 2026-11-18
 
 ## Change Log
 
+- **1.11.0 (2026-11-18)** — MINOR: spinner-free numeric entry. No `type="number"` anywhere;
+  every numeric field is a plain text input with `inputmode="decimal"` (money) or
+  `"numeric"` (percent). Live filtering on every keystroke/paste keeps only digits and one
+  decimal separator (both `.` and `,` accepted, normalized on parse to integer cents); on
+  blur money snaps to 2 decimals and percent to an integer 0–100. Drafts only ever hold
+  committed parsed cents; autosave/validation/R15 untouched. Helpers live in money.js
+  (sanitizeNumericInput/parseFlexibleMoney/formatMoneyInput/formatPctInput) with unit tests;
+  ui-static guards ban type=number. 63/63 tests pass.
 - **1.10.0 (2026-11-18)** — MINOR: live figures explained for real. Every figure (contribution,
   % of own salary, the three leftover lines, left of shared plan, settle-up, plan split bar vs
   coverage bar, fairness line) now has a plain caption plus a tooltip with 2–3 plain sentences

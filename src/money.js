@@ -2,6 +2,34 @@ export function combinedIncome(salaryA, salaryB) {
   return salaryA + salaryB;
 }
 
+/* ---------- spinner-free numeric entry (pure, shared client/server) ----------
+   Fields are plain text inputs (inputmode decimal/numeric). Live filtering keeps only
+   digits and at most one decimal separator ('.' or ',' — normalized on parse). */
+export function sanitizeNumericInput(raw, { decimal = true } = {}) {
+  let s = String(raw ?? '').replace(/[^0-9.,]/g, '');
+  if (!decimal) return s.replace(/[.,]/g, '');
+  const first = s.search(/[.,]/);
+  if (first !== -1) s = s.slice(0, first + 1) + s.slice(first + 1).replace(/[.,]/g, '');
+  return s;
+}
+
+/* '.' and ',' are both accepted as the decimal separator; result is integer cents. */
+export function parseFlexibleMoney(str) {
+  const n = Number.parseFloat(String(str ?? '').replace(',', '.'));
+  return Number.isFinite(n) ? Math.round(n * 100) : 0;
+}
+
+/* blur snap: money fields show one separator and exactly 2 decimals */
+export function formatMoneyInput(cents) {
+  return ((cents ?? 0) / 100).toFixed(2);
+}
+
+/* blur snap: percent fields show an integer 0-100 ('' stays empty = auto) */
+export function formatPctInput(value) {
+  if (value == null || value === '') return '';
+  return String(Math.max(0, Math.min(100, Math.round(Number(value) || 0))));
+}
+
 export function splitBySalary(totalCents, salaryA, salaryB) {
   const combined = combinedIncome(salaryA, salaryB);
   if (combined <= 0 || totalCents <= 0) {

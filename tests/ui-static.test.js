@@ -12,6 +12,7 @@ const css = read('public/styles.css');
 const server = read('src/server.js');
 const db = read('src/db.js');
 const api = read('src/api.js');
+const money = read('src/money.js');
 
 function i18n() {
   const start = app.indexOf('const I18N = {');
@@ -282,6 +283,18 @@ test('tooltips: every field-label i18n key has a matching tip<Key> key in BOTH e
   }
 });
 
+/* ---------- spinner-free numeric entry ---------- */
+
+test('numeric entry: no type=number anywhere, text inputs with inputmode, live filtering, blur snap', () => {
+  assert.ok(!/type:\s*'number'/.test(app), 'type:number found in app.js (spinner arrows)');
+  assert.ok(!/type="number"/.test(html), 'type=number found in index.html');
+  assert.ok(!/\bstep:\s*'/.test(app), 'step attribute on a numeric input found');
+  assert.ok(app.includes("inputmode: 'decimal'") && app.includes("inputmode: 'numeric'"), 'inputmode decimal/numeric missing');
+  assert.ok(app.includes('sanitizeNumericInput') && app.includes('onblur'), 'live filtering + blur snap missing');
+  assert.ok(money.includes('export function sanitizeNumericInput') && money.includes('export function parseFlexibleMoney') && money.includes('export function formatMoneyInput') && money.includes('export function formatPctInput'), 'money.js numeric helpers missing');
+  assert.ok(!css.includes("input[type='number']"), 'spinner selector left in styles.css');
+});
+
 test('tooltips: every live-figure caption key has a matching tooltip key in BOTH en and pl, with live-example placeholders', () => {
   const { en, pl } = i18n();
   const figureKeys = [
@@ -344,6 +357,6 @@ test('chrome/a11y: header save indicator, balance hidden at zero, label-wrapped 
   const { en, pl } = i18n();
   assert.ok(!/%\s*\$\{[^}]*\}\s*.*t\('ofIncome'\)/.test(app) && !app.includes("% ${t('ofIncome')}"), 'ofIncome must not be used as a suffix after a raw % (doubled %%)');
   assert.ok(/\.dialog-panel\s*\{[^}]*min\(640px/.test(css), 'dialog panels should be wider for summary tables');
-  assert.ok(/\.personal-row input\[type='number'\]\s*\{[^}]*min-width/.test(css), 'money inputs must be able to grow (no clipped amounts)');
+  assert.ok(/\.personal-row input\.num-input\s*\{[^}]*min-width/.test(css), 'money inputs must be able to grow (no clipped amounts)');
   assert.ok(api.includes('seenCats'), 'categories must be deduped server-side');
 });
