@@ -37,7 +37,7 @@ test('i18n: every t() key and data-i18n(-aria) key exists; no dead keys', () => 
   for (const m of html.matchAll(/data-i18n(?:-aria)?="([\w-]+)"/g)) used.add(m[1]);
   for (const pr of ['presetPaper', 'presetInk', 'presetSunrise', 'presetBerry', 'presetOcean', 'presetContrast']) used.add(pr);
   for (const k of used) assert.ok(k in en, `used but missing key: ${k}`);
-  for (const k of Object.keys(en)) assert.ok(used.has(k), `dead key: ${k}`);
+  for (const k of Object.keys(en)) assert.ok(used.has(k) || k.startsWith('err_'), `dead key: ${k}`);
 });
 
 test('i18n: no hardcoded user-facing strings outside the dictionary', () => {
@@ -133,7 +133,9 @@ test('theme is per partner profile (server-side), never localStorage', () => {
 });
 
 test('exactly one Save button in settings; plan autosaves (no savePlan)', () => {
-  assert.equal([...app.matchAll(/text: t\('save'\)/g)].length, 1);
+  const rsStart = app.indexOf('function renderSettings');
+  const rs = app.slice(rsStart, app.indexOf('\nfunction ', rsStart + 1));
+  assert.equal([...rs.matchAll(/text: t\('save'\)/g)].length, 1, 'settings must have exactly one Save');
   assert.ok(!app.includes('savePlan'), 'plan Save button must be gone (autosave)');
   assert.ok(app.includes('scheduleAutosave') && app.includes('liveSummary'));
   assert.ok(server.includes('/shared/money.js') && app.includes("from '/shared/money.js'"));
@@ -233,4 +235,52 @@ test('per-item partner share: -1 sentinel, migration, validation', () => {
 
 test('migrations: expenses.category column guarded', () => {
   assert.ok(db.includes("ALTER TABLE expenses ADD COLUMN category"));
+});
+
+/* ---------- round 7 guards: audit fixes ---------- */
+
+test('create-month: header New month button wired, next-free ym picker, no fake month option', () => {
+  assert.ok(html.includes('id="btn-new-month"') && app.includes("$('#btn-new-month')"), 'New month button must exist and be wired');
+  assert.ok(app.includes('function nextYm') && app.includes('while (taken.has(ym))'), 'createMonth must skip existing ym values');
+  assert.ok(app.includes("t('noMonthsYet')"), 'empty month list must show a disabled placeholder option');
+  const lm = app.slice(app.indexOf('function loadMonths'), app.indexOf('\nfunction ', app.indexOf('function loadMonths') + 1));
+  assert.ok(lm.includes('state.openMonth?.ym ?? null'), 'main view must target the open month only');
+  assert.ok(app.includes('function renderMonthOptions'), 'month options must be re-renderable (language switch)');
+});
+
+test('autosave: flush on month switch/close, item ids preserved, skipped rows reported', () => {
+  assert.ok(app.includes('async function flushAutosave'), 'flushAutosave missing');
+  assert.ok((app.match(/await flushAutosave\(\);/g) ?? []).length >= 2, 'month switch and close must flush pending autosave');
+  assert.ok(app.includes('id: i.id ?? null'), 'autosave must send item ids so the server can upsert');
+  assert.ok(app.includes("t('savedSkipped'"), 'skipped empty/zero rows must be reported, not silently "Saved."');
+  assert.ok(api.includes('UPDATE plan_items SET') && api.includes('plan_item_id = NULL'), 'server must upsert by id and orphan links instead of FK-failing');
+});
+
+test('api errors carry codes and map to i18n; expense edit endpoint exists', () => {
+  assert.ok(api.includes('this.code = code'), 'ApiError must carry a machine code');
+  assert.ok(server.includes('code: err.code') && server.includes("code: 'internal'"), 'server must send error codes');
+  assert.ok(app.includes('err_${data.code}'), 'client must map codes to i18n strings');
+  assert.ok(api.includes("route('PUT', '/api/expenses/:id'"), 'expense edit endpoint missing');
+  assert.ok(app.includes("PUT', `/api/expenses/"), 'client expense PUT missing');
+  assert.ok(app.includes('editingExpenseId') && app.includes('id: \'ef-date\''), 'expense form must support edit-in-place and preserved fields');
+});
+
+test('destructive + settings: confirms on delete, dirty-guard on settings close', () => {
+  assert.ok((app.match(/showConfirm\(t\('confirmDelete'\)/g) ?? []).length >= 3, 'plan/expense/leftover deletes need confirm');
+  assert.ok(app.includes('settingsDirty') && app.includes("t('discardChanges')") && app.includes('function requestClose'), 'settings close must ask before discarding edits');
+});
+
+test('chrome/a11y: header save indicator, balance hidden at zero, label-wrapped fields, grouped cards, no leading % in ofIncome', () => {
+  assert.ok(html.includes('save-state'), 'header save indicator missing');
+  assert.ok((app.match(/querySelectorAll\('\.save-state'\)/g) ?? []).length === 1, 'setSaveState must update all .save-state nodes');
+  const rh = app.slice(app.indexOf('function renderHeader'), app.indexOf('\nfunction ', app.indexOf('function renderHeader') + 1));
+  assert.ok(rh.includes('offset !== 0'), 'balance badge must hide when there is nothing to settle');
+  const f = app.slice(app.indexOf('function field('), app.indexOf('\nfunction ', app.indexOf('function field(') + 1));
+  assert.ok(f.includes("el('label', { class: 'field'"), 'field() must wrap the control in a real <label>');
+  assert.ok(app.includes("role: 'group'") && app.includes("t('newItem')"), 'item cards need group aria-labels');
+  const { en, pl } = i18n();
+  assert.ok(!String(en.ofIncome).startsWith('%') && !String(pl.ofIncome).startsWith('%'), 'ofIncome must not start with % (doubled %%)');
+  assert.ok(/\.dialog-panel\s*\{[^}]*min\(640px/.test(css), 'dialog panels should be wider for summary tables');
+  assert.ok(/\.personal-row input\[type='number'\]\s*\{[^}]*min-width/.test(css), 'money inputs must be able to grow (no clipped amounts)');
+  assert.ok(api.includes('seenCats'), 'categories must be deduped server-side');
 });

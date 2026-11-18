@@ -298,3 +298,37 @@ So UI/UX regressions are caught without anyone spelling them out:
 
 Verification: `npm test` 47/47; `node --check` all JS; loopback smoke (statics 200, traversal
 contained, API state OK).
+
+## Round 7 — external audit findings, fixed (2026-11-18, constitution 1.8.0)
+
+Confirmed and fixed (all with regression tests; `npm test` 55/55):
+1. Plan autosave FK-500 after linking an expense → PUT plan now upserts by item id inside a
+   transaction; removed items orphan their expenses (plan_item_id = NULL) instead of failing.
+   Verified: edit after link → 200, link preserved; removal → 200, link nulled.
+2. Create-month dead end after first close → main view targets the open month only; a header
+   "New month" button (enabled iff no open month) creates the first free ym from current month
+   forward; empty month list shows a disabled placeholder. Verified: re-create same ym → 409
+   `month_exists`, next ym → 200.
+3. Silent drop of empty/zero rows → autosave now reports "Saved. N row(s) skipped…".
+4. Lost edits on month switch / close → flushAutosave() before both.
+5. Settings Escape/backdrop discarding edits → dirty-check confirm (requestClose) on button,
+   backdrop, and Escape; only theme preview was reverted before.
+6. Deletes without confirm → in-app confirm for plan rows, expenses, leftover entries.
+7. Expense friction → PUT /api/expenses/:id + edit-in-place button; date defaults to today
+   (clamped into the month); date/category/payer/link preserved after each add.
+8. Raw English API errors in PL UI → ApiError carries a `code`, server sends it, client maps
+   `err_*` codes to en/pl strings; month dropdown rebuilt after language switch.
+9. Save indicator only in salaries card → also in the header (all `.save-state` nodes).
+10. "Balance 0.00" chip → hidden when settle-up is zero; fake empty month option → disabled
+    "No months yet".
+11. a11y → field() wraps controls in real <label>; item cards are role=group with aria-label.
+12. Doubled "%" ("43.1% % of own salary") → ofIncome no longer starts with %; split-bar label
+    no longer claims "by salary" when per-item overrides exist; categories deduped
+    case-insensitively server-side; money inputs can grow (no more clipped "3600."); dialogs
+    wider (640px) with break-word cells and nowrap numbers; plan-vs-actual now uses the live
+    draft summary.
+Refuted at HEAD with measurements: "focus ring too faint" — accent/surface-1 = 5.0–14.0:1,
+accent-soft/surface = 4.1–10.9:1, line-2/surface = 3.02–5.73:1 across all 12 preset×mode
+combos (all ≥ 3:1 as the constitution promises). Expense DELETE works at HEAD (200, row gone).
+Left UNCLEAR (needs owner decision): currency field — ISO 4217 dropdown vs validated free-text
+vs free-form as-is.

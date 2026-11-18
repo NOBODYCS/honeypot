@@ -139,6 +139,25 @@ step.
   as "—" via pctStr(), never the literal "null%".
 - Static file serving must contain path resolution strictly inside PUBLIC_DIR (separator
   boundary check), guarded by test + smoke.
+- Plan saves are ID-PRESERVING upserts in one transaction: items sent with an existing id are
+  UPDATEd (so expenses.plan_item_id links survive), new items are INSERTed, removed items
+  orphan their expenses (plan_item_id = NULL) instead of failing the FK. Autosave sends ids.
+- Autosave must be FLUSHED before switching months or closing a month (flushAutosave), and must
+  report rows it skipped (empty label / zero amount) instead of claiming a plain "Saved."
+- Creating a month picks the first free YYYY-MM starting at the current month; the main view
+  targets the OPEN month only, and a header "New month" button is enabled exactly when no month
+  is open. Closing never auto-creates (R10) but creating the next month must always be possible.
+- API errors carry a machine `code`; the client maps known codes to i18n strings (err_* keys),
+  so the PL UI never shows raw English server messages. Month dropdown labels are rebuilt after
+  a language switch.
+- Expenses are editable in place (PUT /api/expenses/:id); the add form defaults the date to
+  today (clamped into the month) and keeps date/category/payer/link after each save. Destructive
+  deletes (plan row, expense, leftover) require the in-app confirm dialog. Settings discards are
+  guarded by a dirty-check confirm on close (button, backdrop, Escape).
+- The save indicator lives in the header (all `.save-state` nodes), not only in the salaries
+  card. The balance badge hides when the settle-up is zero. Field labels wrap their controls in
+  real `<label>` elements; item cards are role=group with an aria-label. Categories are deduped
+  (case-insensitive) server-side. The "% of own salary" phrasing never double-prints "%".
 
 ## Technology & Constraints
 
@@ -173,10 +192,19 @@ change, a semantic version bump (MAJOR for removed/redefined principles, MINOR f
 principles/sections, PATCH for clarifications), and a change-log entry. All PRs must verify
 compliance; any complexity beyond the principles above must be justified in the PR.
 
-**Version**: 1.7.0 | **Ratified**: 2026-11-17 | **Last Amended**: 2026-11-18
+**Version**: 1.8.0 | **Ratified**: 2026-11-17 | **Last Amended**: 2026-11-18
 
 ## Change Log
 
+- **1.8.0 (2026-11-18)** — MINOR: external-audit fixes. Plan PUT no longer FK-500s after an
+  expense is linked (id-preserving upsert + orphan links); autosave flushes before month
+  switch/close and reports skipped rows; "New month" header button + next-free-ym creation so a
+  closed month never dead-ends; expense edit-in-place (PUT) with date defaulting to today and
+  form values preserved across adds; API error codes mapped to i18n; month dropdown rebuilt on
+  language switch; confirms on destructive deletes; settings dirty-guard on close; header save
+  indicator; balance badge hidden at zero; real label-wrapped fields + grouped item cards;
+  case-insensitive category dedupe; fixed doubled "%" and the "by salary" bar label; wider
+  dialogs, unclipped money inputs, live plan-vs-actual. 55/55 tests pass.
 - **1.7.0 (2026-11-18)** — MINOR: second full review pass. Fixed: CSP `style-src 'self'` was
   silently blocking all inline `style` attributes (split bars/colored dots unstyled) — el()
   now applies styles via CSSOM setProperty; "null%" could render when a salary was 0 (pctStr

@@ -2,9 +2,10 @@ import { computeSummary } from './money.js';
 import { THEME_PRESETS } from './db.js';
 
 export class ApiError extends Error {
-  constructor(status, message) {
+  constructor(status, message, code) {
     super(message);
     this.status = status;
+    this.code = code;
   }
 }
 
@@ -49,7 +50,7 @@ function requireMonth(db, ym) {
 
 function requireOpenMonth(db, ym) {
   const month = requireMonth(db, ym);
-  if (month.status !== 'open') throw new ApiError(409, `month ${ym} is closed`);
+  if (month.status !== 'open') throw new ApiError(409, `month ${ym} is closed`, 'month_closed');
   return month;
 }
 
@@ -165,7 +166,7 @@ const YM_RE = /^\d{4}-(0[1-9]|1[0-2])$/;
 
 function validateCents(value, { min = 0 } = {}) {
   if (!Number.isInteger(value) || value < min) {
-    throw new ApiError(400, `amount must be integer cents >= ${min}`);
+    throw new ApiError(400, `amount must be integer cents >= ${min}`, 'invalid');
   }
 }
 
@@ -174,15 +175,18 @@ function validatePlanItem(item) {
     throw new ApiError(400, 'item.kind must be fixed, variable or personal');
   }
   if (typeof item.label !== 'string' || !item.label.trim()) {
-    throw new ApiError(400, 'item.label must be a non-empty string');
+    throw new ApiError(400, 'item.label must be a non-empty string', 'invalid');
   }
   validateCents(item.amountCents);
+  if (item.id != null && !Number.isInteger(item.id)) {
+    throw new ApiError(400, 'item.id must be an integer when present', 'invalid');
+  }
   const pct = item.partnerSharePct ?? -1;
   if (!Number.isInteger(pct) || pct < -1 || pct > 100) {
-    throw new ApiError(400, 'partnerSharePct must be an integer in [-1,100] (-1 = salary split)');
+    throw new ApiError(400, 'partnerSharePct must be an integer in [-1,100] (-1 = salary split)', 'invalid');
   }
   if (item.kind === 'personal' && ![1, 2].includes(item.ownerProfileId)) {
-    throw new ApiError(400, 'personal items need ownerProfileId 1 or 2');
+    throw new ApiError(400, 'personal items need ownerProfileId 1 or 2', 'invalid');
   }
 }
 
@@ -239,18 +243,26 @@ export function createApi(db) {
       language: body.language ?? current.language,
       categories: body.categories ?? current.categories,
     };
-    if (!/^[A-Z]{3}$/.test(next.currencyCode)) {
-      throw new ApiError(400, 'currencyCode must be a 3-letter ISO 4217 code');
+    if (body.currencyCode !== undefined && !/^[A-Z]{3}$/.test(body.currencyCode)) {
+      throw new ApiError(400, 'currencyCode must be a 3-letter ISO 4217 code', 'invalid');
     }
-    if (!LANGUAGES.includes(next.language)) {
-      throw new ApiError(400, `language must be one of ${LANGUAGES.join(', ')}`);
+    if (body.language !== undefined && !LANGUAGES.includes(body.language)) {
+      throw new ApiError(400, `language must be one of ${LANGUAGES.join(', ')}`, 'invalid');
     }
-    if (
-      !Array.isArray(next.categories) ||
-      next.categories.some((c) => typeof c !== 'string' || !c.trim())
-    ) {
-      throw new ApiError(400, 'categories must be an array of non-empty strings');
+    let categories = body.categories ?? current.categories;
+    if (!Array.isArray(categories) || categories.some((c) => typeof c !== 'string')) {
+      throw new ApiError(400, 'categories must be an array of non-empty strings', 'invalid');
     }
+    const seenCats = new Set();
+    next.categories = categories
+      .map((c) => c.trim())
+      .filter(Boolean)
+      .filter((c) => {
+        const k = c.toLowerCase();
+        if (seenCats.has(k)) return false;
+        seenCats.add(k);
+        return true;
+      });
     const put = db.prepare('INSERT INTO settings (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value');
     put.run('currency_code', next.currencyCode);
     put.run('language', next.language);
@@ -287,14 +299,14 @@ export function createApi(db) {
   route('POST', '/api/months', (m, body) => {
     const ym = body.ym;
     if (!YM_RE.test(ym ?? '')) {
-      throw new ApiError(400, 'ym must be a YYYY-MM calendar month key');
+      throw new ApiError(400, 'ym must be a YYYY-MM calendar month key', 'invalid');
     }
     if (getMonthByYm(db, ym)) {
-      throw new ApiError(409, `month ${ym} already exists`);
+      throw new ApiError(409, `month ${ym} already exists`, 'month_exists');
     }
     const open = db.prepare("SELECT ym FROM months WHERE status = 'open'").get();
     if (open) {
-      throw new ApiError(409, `month ${open.ym} is still open`);
+      throw new ApiError(409, `month ${open.ym} is still open`, 'month_open');
     }
     const source = db
       .prepare('SELECT * FROM months ORDER BY ym DESC LIMIT 1')
@@ -326,23 +338,44 @@ export function createApi(db) {
     const salaries = body.salaries ?? {};
     const items = body.items ?? [];
     if (!Array.isArray(items)) {
-      throw new ApiError(400, 'items must be an array');
+      throw new ApiError(400, 'items must be an array', 'invalid');
     }
     for (const item of items) validatePlanItem(item);
     putSalaries(db, month.ym, salaries);
-    db.prepare('DELETE FROM plan_items WHERE month_id = ?').run(month.id);
-    const insert = db.prepare(
-      'INSERT INTO plan_items (month_id, kind, label, amount_cents, owner_profile_id, partner_share_pct) VALUES (?, ?, ?, ?, ?, ?)'
-    );
-    for (const item of items) {
-      insert.run(
-        month.id,
-        item.kind,
-        item.label.trim(),
-        item.amountCents,
-        item.kind === 'personal' ? item.ownerProfileId : null,
-        item.partnerSharePct ?? -1
+    const existing = monthPlanItems(db, month.id);
+    const existingIds = new Set(existing.map((r) => r.id));
+    /* Upsert by id so expenses.plan_item_id FKs survive plan edits; removed items
+       orphan their expenses (plan_item_id = NULL) instead of failing the FK. */
+    db.exec('BEGIN');
+    try {
+      const keep = new Set();
+      const upsert = db.prepare(
+        'UPDATE plan_items SET kind = ?, label = ?, amount_cents = ?, owner_profile_id = ?, partner_share_pct = ? WHERE id = ? AND month_id = ?'
       );
+      const insert = db.prepare(
+        'INSERT INTO plan_items (month_id, kind, label, amount_cents, owner_profile_id, partner_share_pct) VALUES (?, ?, ?, ?, ?, ?)'
+      );
+      for (const item of items) {
+        const pid = Number.isInteger(item.id) && existingIds.has(item.id) ? item.id : null;
+        if (pid) {
+          upsert.run(item.kind, item.label.trim(), item.amountCents, item.kind === 'personal' ? item.ownerProfileId : null, item.partnerSharePct ?? -1, pid, month.id);
+          keep.add(pid);
+        } else {
+          insert.run(month.id, item.kind, item.label.trim(), item.amountCents, item.kind === 'personal' ? item.ownerProfileId : null, item.partnerSharePct ?? -1);
+        }
+      }
+      const orphan = db.prepare('UPDATE expenses SET plan_item_id = NULL WHERE plan_item_id = ?');
+      const del = db.prepare('DELETE FROM plan_items WHERE id = ? AND month_id = ?');
+      for (const old of existing) {
+        if (!keep.has(old.id)) {
+          orphan.run(old.id);
+          del.run(old.id, month.id);
+        }
+      }
+      db.exec('COMMIT');
+    } catch (err) {
+      db.exec('ROLLBACK');
+      throw err;
     }
     return monthPayload(db, month);
   });
@@ -355,7 +388,7 @@ export function createApi(db) {
   route('GET', '/api/months/:ym/history', (m) => {
     const month = requireMonth(db, m.ym);
     if (month.status !== 'closed') {
-      throw new ApiError(409, 'history is available for closed months only');
+      throw new ApiError(409, 'history is available for closed months only', 'history_closed_only');
     }
     return {
       ym: month.ym,
@@ -367,11 +400,10 @@ export function createApi(db) {
     };
   });
 
-  route('POST', '/api/months/:ym/expenses', (m, body) => {
-    const month = requireOpenMonth(db, m.ym);
+  function validateExpenseBody(db, month, body) {
     validateCents(body.amountCents, { min: 1 });
     if (typeof body.description !== 'string' || !body.description.trim()) {
-      throw new ApiError(400, 'description must be a non-empty string');
+      throw new ApiError(400, 'description must be a non-empty string', 'invalid');
     }
     const dateRe = /^\d{4}-\d{2}-\d{2}$/;
     if (dateRe.test(body.date ?? '') && body.date.startsWith(month.ym)) {
@@ -379,37 +411,53 @@ export function createApi(db) {
       const [yr, mo] = month.ym.split('-').map(Number);
       const lastDay = new Date(Date.UTC(yr, mo, 0)).getUTCDate();
       if (day < 1 || day > lastDay) {
-        throw new ApiError(400, 'expense date must be a real day within the month');
+        throw new ApiError(400, 'expense date must be a real day within the month', 'invalid');
       }
     } else {
-      throw new ApiError(400, 'expense date must be within the month');
+      throw new ApiError(400, 'expense date must be within the month', 'invalid');
     }
     let planItemId = null;
     if (body.planItemId != null) {
       const item = db.prepare('SELECT * FROM plan_items WHERE id = ?').get(body.planItemId);
       if (!item || item.month_id !== month.id || item.kind !== 'variable') {
-        throw new ApiError(400, 'planItemId must be a variable item of this month');
+        throw new ApiError(400, 'planItemId must be a variable item of this month', 'invalid');
       }
       planItemId = item.id;
     }
     if (body.payerProfileId != null && ![1, 2].includes(body.payerProfileId)) {
-      throw new ApiError(400, 'payerProfileId must be 1 or 2');
+      throw new ApiError(400, 'payerProfileId must be 1 or 2', 'invalid');
     }
     if (body.category != null && (typeof body.category !== 'string' || body.category.trim().length > 60)) {
-      throw new ApiError(400, 'category must be a string of at most 60 characters');
+      throw new ApiError(400, 'category must be a string of at most 60 characters', 'invalid');
     }
-    const category = typeof body.category === 'string' ? body.category.trim() : '';
+    return {
+      date: body.date,
+      category: typeof body.category === 'string' ? body.category.trim() : '',
+      description: body.description.trim(),
+      amountCents: body.amountCents,
+      planItemId,
+      payerProfileId: body.payerProfileId ?? null,
+    };
+  }
+
+  route('POST', '/api/months/:ym/expenses', (m, body) => {
+    const month = requireOpenMonth(db, m.ym);
+    const v = validateExpenseBody(db, month, body);
     db.prepare(
       'INSERT INTO expenses (month_id, date, category, description, amount_cents, plan_item_id, payer_profile_id) VALUES (?, ?, ?, ?, ?, ?, ?)'
-    ).run(
-      month.id,
-      body.date,
-      category,
-      body.description.trim(),
-      body.amountCents,
-      planItemId,
-      body.payerProfileId ?? null
-    );
+    ).run(month.id, v.date, v.category, v.description, v.amountCents, v.planItemId, v.payerProfileId);
+    return monthPayload(db, month);
+  });
+
+  route('PUT', '/api/expenses/:id', (m, body) => {
+    const expense = db.prepare('SELECT * FROM expenses WHERE id = ?').get(Number(m.id));
+    if (!expense) throw new ApiError(404, 'expense not found');
+    const month = db.prepare('SELECT * FROM months WHERE id = ?').get(expense.month_id);
+    requireOpenMonth(db, month.ym);
+    const v = validateExpenseBody(db, month, body);
+    db.prepare(
+      'UPDATE expenses SET date = ?, category = ?, description = ?, amount_cents = ?, plan_item_id = ?, payer_profile_id = ? WHERE id = ?'
+    ).run(v.date, v.category, v.description, v.amountCents, v.planItemId, v.payerProfileId, expense.id);
     return monthPayload(db, month);
   });
 
@@ -425,17 +473,17 @@ export function createApi(db) {
   route('POST', '/api/months/:ym/leftovers', (m, body) => {
     const month = requireMonth(db, m.ym);
     if (month.status !== 'closed') {
-      throw new ApiError(409, 'leftover log is for closed months');
+      throw new ApiError(409, 'leftover log is for closed months', 'not_closed');
     }
     if (mostRecentClosedYm(db) !== month.ym) {
-      throw new ApiError(409, 'only the most recently closed month is editable');
+      throw new ApiError(409, 'only the most recently closed month is editable', 'not_most_recent');
     }
     if (![1, 2].includes(body.profileId)) {
-      throw new ApiError(400, 'profileId must be 1 or 2');
+      throw new ApiError(400, 'profileId must be 1 or 2', 'invalid');
     }
     validateCents(body.amountCents, { min: 1 });
     if (typeof body.category !== 'string' || !body.category.trim()) {
-      throw new ApiError(400, 'category must be a non-empty string');
+      throw new ApiError(400, 'category must be a non-empty string', 'invalid');
     }
     db.prepare(
       'INSERT INTO leftover_entries (month_id, profile_id, amount_cents, category, note) VALUES (?, ?, ?, ?, ?)'
@@ -448,7 +496,7 @@ export function createApi(db) {
     if (!entry) throw new ApiError(404, 'leftover entry not found');
     const month = db.prepare('SELECT * FROM months WHERE id = ?').get(entry.month_id);
     if (mostRecentClosedYm(db) !== month.ym) {
-      throw new ApiError(409, 'only the most recently closed month is editable');
+      throw new ApiError(409, 'only the most recently closed month is editable', 'not_most_recent');
     }
     db.prepare('DELETE FROM leftover_entries WHERE id = ?').run(entry.id);
     return { leftovers: monthLeftovers(db, month.id) };

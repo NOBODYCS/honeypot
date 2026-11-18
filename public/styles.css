@@ -729,7 +729,7 @@ th, td {
   padding: var(--sp-2) var(--sp-3);
   border-bottom: 1px solid var(--line);
   vertical-align: middle;
-  overflow-wrap: anywhere;
+  overflow-wrap: break-word;
 }
 
 thead th {
@@ -755,6 +755,7 @@ td.num, th.num {
   text-align: right;
   font-family: var(--font-mono);
   font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
 
 /* ---- figures: stat tiles ---- */
@@ -1029,8 +1030,9 @@ figure.fig .money {
 }
 
 .personal-row input[type='number'] {
-  width: 5.5rem;
-  flex-shrink: 0;
+  width: 7.5rem;
+  min-width: 5.5rem;
+  flex-shrink: 1;
 }
 
 .personal-pct {
@@ -1282,7 +1284,7 @@ dialog::backdrop {
   margin: 0 0 0 auto;
   height: 100dvh;
   max-height: 100dvh;
-  width: min(520px, 100vw);
+  width: min(640px, 100vw);
   background: var(--canvas);
   padding: var(--sp-5);
   overflow-y: auto;

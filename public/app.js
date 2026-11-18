@@ -90,12 +90,12 @@ const I18N = {
     navPanels: 'Panels',
     personalExpensesAria: 'Personal expenses list',
     centerAria: 'Month plan and spending',
-    splitOfPlan: "Who pays how much of the shared costs (by salary)",
+    splitOfPlan: 'Who pays how much of the shared costs',
     ofPlan: "of shared costs",
     coversSpending: 'Who covers spending so far',
-    ofIncome: "% of own salary",
+    ofIncome: 'of own salary',
     fairIncome: "Fair share = equal % of own salary — both pay {pct}%",
-    tipSplit: "The bar shows each side’s share of the shared costs, proportional to salary — not a share of the pot. The pot only pays; it owns nothing.",
+    tipSplit: "Default: split by salary. A custom % set on an item overrides it for that item. The bar shows the result — each side's share of the shared costs, never of the pot.",
     tipCoverage: "Of the money spent so far: who fronted it personally vs what the pot paid.",
     tipIncome: "Fair share means both partners spend the same % of their own salary on shared costs.",
     splitLabel: 'Split',
@@ -104,6 +104,21 @@ const I18N = {
     sectionProfile: 'Your profile',
     profileHint: 'Name, theme and mode apply only to you — the other partner has their own.',
     sectionApp: 'App',
+    newMonth: 'New month',
+    noMonthsYet: 'No months yet',
+    discardChanges: 'Discard unsaved settings changes?',
+    confirmDelete: 'Delete this item? This cannot be undone.',
+    savedSkipped: 'Saved. {n} row(s) skipped — they need a name and an amount above 0.',
+    edit: 'Edit',
+    newItem: 'New item',
+    err_month_closed: 'This month is closed.',
+    err_month_exists: 'That month already exists.',
+    err_month_open: 'Another month is still open.',
+    err_invalid: 'Invalid input.',
+    err_history_closed_only: 'History is available for closed months only.',
+    err_not_closed: 'The leftover log is for closed months.',
+    err_not_most_recent: 'Only the most recently closed month is editable.',
+    err_internal: 'Something went wrong on the server.',
   },
   pl: {
     profileLabel: 'Aktualny profil',
@@ -192,12 +207,12 @@ const I18N = {
     navPanels: "Panele",
     personalExpensesAria: "Lista wydatków osobistych",
     centerAria: "Plan miesiąca i wydatki",
-    splitOfPlan: "Kto ile płaci za wspólne koszty (wg pensji)",
+    splitOfPlan: 'Kto ile płaci za wspólne koszty',
     ofPlan: "kosztów wspólnych",
     coversSpending: 'Kto pokrywa wydatki do tej pory',
-    ofIncome: "% swojej pensji",
+    ofIncome: 'z własnej pensji',
     fairIncome: "Uczciwy podział = równy % pensji — obie strony płacą po {pct}%",
-    tipSplit: "Pasek pokazuje udział każdej strony w kosztach wspólnych — proporcjonalny do pensji, nie do puli. Pula tylko opłaca wydatki.",
+    tipSplit: "Domyślnie: podział wg pensji. Własny % przy pozycji nadpisuje go dla tej pozycji. Pasek pokazuje wynik — udział w kosztach wspólnych, nigdy w puli.",
     tipCoverage: "Spośród już wydanych pieniędzy: kto zapłacił z własnej kieszeni, a co pokryła pula.",
     tipIncome: 'Uczciwy podział oznacza, że obie osoby przeznaczają taki sam % własnej pensji na koszty wspólne.',
     splitLabel: 'Podział',
@@ -206,6 +221,21 @@ const I18N = {
     sectionProfile: 'Twój profil',
     profileHint: 'Nazwa, motyw i tryb dotyczą tylko Ciebie — druga osoba ma własne.',
     sectionApp: 'Aplikacja',
+    newMonth: 'Nowy miesiąc',
+    noMonthsYet: 'Brak miesięcy',
+    discardChanges: 'Odrzucić niezapisane zmiany ustawień?',
+    confirmDelete: 'Usunąć ten wpis? Tej operacji nie można cofnąć.',
+    savedSkipped: 'Zapisano. Pominięto {n} wiersz(y) — potrzebują nazwy i kwoty powyżej 0.',
+    edit: 'Edytuj',
+    newItem: 'Nowa pozycja',
+    err_month_closed: 'Ten miesiąc jest zamknięty.',
+    err_month_exists: 'Ten miesiąc już istnieje.',
+    err_month_open: 'Inny miesiąc jest jeszcze otwarty.',
+    err_invalid: 'Nieprawidłowe dane.',
+    err_history_closed_only: 'Historia jest dostępna tylko dla zamkniętych miesięcy.',
+    err_not_closed: 'Dziennik wolnych środków dotyczy zamkniętych miesięcy.',
+    err_not_most_recent: 'Edytować można tylko ostatnio zamknięty miesiąc.',
+    err_internal: 'Coś poszło nie tak po stronie serwera.',
   },
 };
 
@@ -334,7 +364,11 @@ async function api(method, path, body) {
     body: body ? JSON.stringify(body) : undefined,
   });
   const data = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(data.error ?? `${method} ${path} failed`);
+  if (!res.ok) {
+    const code = data.code ? `err_${data.code}` : null;
+    const localized = code && (I18N[state.settings.language]?.[code] ?? I18N.en[code]);
+    throw new Error(localized || data.error || `${method} ${path} failed`);
+  }
   return data;
 }
 
@@ -383,15 +417,15 @@ function renderHeader() {
   }
   const balance = $('#balance-badge');
   const settle = state.month?.summary?.settle ?? null;
-  if (state.month && settle) {
-    const offset = Math.abs(settle.A);
+  const offset = settle ? Math.abs(settle.A) : 0;
+  if (state.month && settle && offset !== 0) {
     balance.hidden = false;
-    balance.textContent = offset === 0
-      ? `${t('balance')} ${fmtMoney(0)}`
-      : `${t('balance')} ${fmtMoney(offset)}`;
+    balance.textContent = `${t('balance')} ${fmtMoney(offset)}`;
   } else {
     balance.hidden = true;
   }
+  const newMonthBtn = $('#btn-new-month');
+  if (newMonthBtn) newMonthBtn.disabled = state.openMonth != null;
 }
 
 async function refreshState() {
@@ -467,23 +501,45 @@ function cloneDraft(month) {
   };
 }
 
+function renderMonthOptions() {
+  const select = $('#month-switch');
+  const current = select.value;
+  select.replaceChildren(...kids(
+    ...state.months.map((m) => el('option', { value: m.ym, text: `${m.ym} (${t(m.status)})` })),
+    state.months.length ? null : el('option', { value: '', text: t('noMonthsYet'), disabled: true })
+  ));
+  if (current && [...select.options].some((o) => o.value === current)) select.value = current;
+}
+
 async function loadMonths() {
   const { months } = await api('GET', '/api/months');
   state.months = months;
+  renderMonthOptions();
   const select = $('#month-switch');
-  select.replaceChildren();
-  for (const m of months) {
-    select.append(el('option', { value: m.ym, text: `${m.ym} (${t(m.status)})` }));
-  }
-  const target = state.openMonth?.ym ?? state.mostRecentClosedYm ?? state.currentYm;
-  if (months.some((m) => m.ym === target)) {
+  const target = state.openMonth?.ym ?? null;
+  if (target && months.some((m) => m.ym === target)) {
     select.value = target;
     await loadMonth(target);
   } else {
-    select.replaceChildren(el('option', { value: '', text: state.currentYm }));
+    if (months.length) select.value = months[0].ym;
     state.month = null;
     renderMonth();
   }
+}
+
+function nextYm(ym) {
+  const [y, m] = ym.split('-').map(Number);
+  const d = new Date(Date.UTC(y, m, 1));
+  return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}`;
+}
+
+async function createMonth() {
+  const taken = new Set(state.months.map((m) => m.ym));
+  let ym = state.currentYm;
+  while (taken.has(ym)) ym = nextYm(ym);
+  state.month = await api('POST', '/api/months', { ym });
+  await refreshState();
+  await loadMonths();
 }
 
 async function loadMonth(ym) {
@@ -547,13 +603,13 @@ function itemCard(item, idx, kind, owner) {
     class: 'btn btn-danger',
     text: t('remove'),
     disabled: !canEdit,
-    onclick: () => {
+    onclick: () => showConfirm(t('confirmDelete'), () => {
       state.draft.items.splice(idx, 1);
       renderPlan();
       renderPersonal(1, $('#personal-list-a'));
       renderPersonal(2, $('#personal-list-b'));
       scheduleAutosave();
-    },
+    }),
   });
   const row1 = el('div', { class: 'personal-row' },
     textInput(item.label, (v) => { item.label = v; scheduleAutosave(); }, { disabled: !canEdit }),
@@ -646,7 +702,7 @@ function itemCard(item, idx, kind, owner) {
       autoBtn,
       removeBtn);
   }
-  return el('div', { class: 'personal-item' }, row1, row2);
+  return el('div', { class: 'personal-item', role: 'group', 'aria-label': item.label.trim() || t('newItem') }, row1, row2);
 }
 
 function planItemsOf(kind, owner) {
@@ -685,8 +741,8 @@ function addItem(kind, owner) {
 }
 
 function field(labelText, control) {
-  return el('div', { class: 'field' },
-    el('label', { class: 'field-label', text: labelText }),
+  return el('label', { class: 'field' },
+    el('span', { class: 'field-label', text: labelText }),
     control
   );
 }
@@ -701,7 +757,7 @@ function renderPlan() {
         field(t('salaryFor', { name: state.profiles.find((p) => p.id === pid)?.name ?? pid }),
           moneyInput(state.draft.salaries[pid], (v) => { state.draft.salaries[pid] = v; scheduleAutosave(); }, { disabled: !canEdit }))
       ),
-      el('span', { class: 'hint', id: 'plan-save-state' })
+      el('span', { class: 'hint save-state', id: 'plan-save-state' })
     ),
     el('p', { class: 'hint', id: 'plan-share-hint', text: shareHint() })
   );
@@ -743,9 +799,19 @@ function updateDerived() {
 
 let autosaveTimer = null;
 
+async function flushAutosave() {
+  if (autosaveTimer) {
+    clearTimeout(autosaveTimer);
+    autosaveTimer = null;
+    await autosave();
+  }
+}
+
 function setSaveState(text) {
-  const indicator = document.getElementById('plan-save-state');
-  if (indicator) indicator.textContent = text;
+  for (const n of document.querySelectorAll('.save-state')) {
+    n.textContent = text;
+    n.hidden = !text;
+  }
 }
 
 function scheduleAutosave() {
@@ -758,9 +824,11 @@ function scheduleAutosave() {
 
 async function autosave() {
   if (!state.month || !editable()) return;
-  const items = state.draft.items
+  const all = state.draft.items;
+  const items = all
     .filter((i) => i.label.trim() && i.amountCents > 0)
     .map((i) => ({
+      id: i.id ?? null,
       kind: i.kind,
       label: i.label,
       amountCents: i.amountCents,
@@ -772,7 +840,7 @@ async function autosave() {
       salaries: state.draft.salaries,
       items,
     });
-    setSaveState(t('saved'));
+    setSaveState(items.length === all.length ? t('saved') : t('savedSkipped', { n: all.length - items.length }));
   } catch (err) {
     setSaveState(t('error'));
     notifyError(err);
@@ -925,8 +993,10 @@ function renderFigures() {
 
 /* ---------- spending log (US4) ---------- */
 
+let editingExpenseId = null;
+
 function renderExpenses() {
-  const s = state.month.summary;
+  const s = liveSummary() ?? state.month.summary;
   const canEdit = editable();
   const form = $('#expense-form');
   form.replaceChildren();
@@ -934,22 +1004,57 @@ function renderExpenses() {
     const [yr, mo] = state.month.ym.split('-').map(Number);
     const lastDay = new Date(Date.UTC(yr, mo, 0)).getUTCDate();
     const lastD2 = String(lastDay).padStart(2, '0');
-    const dateInput = el('input', { type: 'date', value: `${state.month.ym}-01`, min: `${state.month.ym}-01`, max: `${state.month.ym}-${lastD2}`, 'aria-label': t('date') });
-    const descInput = el('input', { type: 'text', placeholder: t('description'), 'aria-label': t('description') });
-    const amountInput = el('input', { type: 'number', step: '0.01', min: '0.01', inputmode: 'decimal', placeholder: t('amount'), 'aria-label': t('amount') });
-    const itemSelect = el('select', {},
+    const now = new Date();
+    const todayIso = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+    const defDate = todayIso >= `${state.month.ym}-01` && todayIso <= `${state.month.ym}-${lastD2}` ? todayIso : `${state.month.ym}-01`;
+    const editing = state.month.expenses.find((x) => x.id === editingExpenseId) ?? null;
+    const dateInput = el('input', { id: 'ef-date', type: 'date', value: editing?.date ?? defDate, min: `${state.month.ym}-01`, max: `${state.month.ym}-${lastD2}`, 'aria-label': t('date') });
+    const descInput = el('input', { id: 'ef-desc', type: 'text', placeholder: t('description'), 'aria-label': t('description'), value: editing?.description ?? '' });
+    const amountInput = el('input', { id: 'ef-amount', type: 'number', step: '0.01', min: '0.01', inputmode: 'decimal', placeholder: t('amount'), 'aria-label': t('amount'), value: editing ? (editing.amountCents / 100).toFixed(2) : '' });
+    const itemSelect = el('select', { id: 'ef-item' },
       el('option', { value: '', text: `${t('linkItem')}: ${t('unplanned')}` }),
       ...state.month.items
         .filter((i) => i.kind === 'variable')
         .map((i) => el('option', { value: i.id, text: i.label }))
     );
-    const payerSelect = el('select', {},
+    const payerSelect = el('select', { id: 'ef-payer' },
       el('option', { value: '', text: `${t('payer')}: ${t('potPaid')}` }),
       ...state.profiles.map((p) => el('option', { value: p.id, text: p.name }))
     );
-    const categorySelect = el('select', {},
+    const categorySelect = el('select', { id: 'ef-category' },
       ...state.settings.categories.map((c) => el('option', { value: c, text: c }))
     );
+    if (editing) {
+      itemSelect.value = editing.planItemId != null ? String(editing.planItemId) : '';
+      payerSelect.value = editing.payerProfileId != null ? String(editing.payerProfileId) : '';
+      categorySelect.value = editing.category ?? '';
+    }
+    const submit = async () => {
+      const payload = {
+        date: dateInput.value,
+        category: categorySelect.value,
+        description: descInput.value,
+        amountCents: parseMoney(amountInput.value),
+        planItemId: itemSelect.value ? Number(itemSelect.value) : null,
+        payerProfileId: payerSelect.value ? Number(payerSelect.value) : null,
+      };
+      try {
+        if (editingExpenseId) {
+          state.month = await api('PUT', `/api/expenses/${editingExpenseId}`, payload);
+        } else {
+          state.month = await api('POST', `/api/months/${state.month.ym}/expenses`, payload);
+        }
+        const keep = { 'ef-date': dateInput.value, 'ef-category': categorySelect.value, 'ef-payer': payerSelect.value, 'ef-item': itemSelect.value };
+        editingExpenseId = null;
+        renderMonth();
+        for (const [id, v] of Object.entries(keep)) {
+          const n = document.getElementById(id);
+          if (n && (n.tagName !== 'SELECT' || [...n.options].some((o) => o.value === v))) n.value = v;
+        }
+      } catch (err) {
+        notifyError(err);
+      }
+    };
     form.append(
       el('div', { class: 'form-grid' },
         field(t('date'), dateInput),
@@ -961,23 +1066,12 @@ function renderExpenses() {
         el('button', {
           type: 'button',
           class: 'btn btn-primary',
-          text: t('addExpense'),
-          onclick: (e) => withBusy(e.currentTarget, async () => {
-            try {
-              state.month = await api('POST', `/api/months/${state.month.ym}/expenses`, {
-                date: dateInput.value,
-                category: categorySelect.value,
-                description: descInput.value,
-                amountCents: parseMoney(amountInput.value),
-                planItemId: itemSelect.value ? Number(itemSelect.value) : null,
-                payerProfileId: payerSelect.value ? Number(payerSelect.value) : null,
-              });
-              renderMonth();
-            } catch (err) {
-              notifyError(err);
-            }
-          }),
-        })
+          text: editing ? t('save') : t('addExpense'),
+          onclick: (e) => withBusy(e.currentTarget, submit),
+        }),
+        editing
+          ? el('button', { type: 'button', class: 'btn', text: t('cancel'), onclick: () => { editingExpenseId = null; renderExpenses(); } })
+          : null
       )
     );
   }
@@ -1017,13 +1111,21 @@ function renderExpenses() {
           el('td', { class: 'num money', text: fmtMoney(e.amountCents) }),
           el('td', { text: linked?.label ?? t('unplanned') }),
           el('td', { text: payer?.name ?? t('potPaid') }),
-          el('td', {},
+          el('td', {}, ...kids(
+            canEdit
+              ? el('button', {
+                  type: 'button',
+                  class: 'btn btn-mini',
+                  text: t('edit'),
+                  onclick: () => { editingExpenseId = e.id; renderExpenses(); },
+                })
+              : null,
             canEdit
               ? el('button', {
                   type: 'button',
                   class: 'btn btn-danger',
                   text: t('remove'),
-                  onclick: (e) => withBusy(e.currentTarget, async () => {
+                  onclick: () => showConfirm(t('confirmDelete'), async () => {
                     try {
                       state.month = await api('DELETE', `/api/expenses/${e.id}`);
                       renderMonth();
@@ -1033,7 +1135,7 @@ function renderExpenses() {
                   }),
                 })
               : null
-          )
+          ))
         );
       }), null, t('noExpenses')
     ),
@@ -1109,6 +1211,7 @@ function renderSummaryBody(box, snapshot, month) {
 }
 
 let confirmAction = null;
+let settingsDirty = false;
 
 function showConfirm(message, action) {
   confirmAction = action;
@@ -1116,8 +1219,20 @@ function showConfirm(message, action) {
   $('#dlg-confirm').showModal();
 }
 
+function requestClose(dialog) {
+  if (dialog.id === 'dlg-settings' && settingsDirty) {
+    showConfirm(t('discardChanges'), () => {
+      settingsDirty = false;
+      dialog.close();
+    });
+    return;
+  }
+  dialog.close();
+}
+
 async function closeMonth() {
   if (!state.month || state.month.status !== 'open') return;
+  await flushAutosave();
   showConfirm(t('confirmClose'), async () => {
     try {
       const closed = await api('POST', `/api/months/${state.month.ym}/close`);
@@ -1149,7 +1264,7 @@ function renderSettings() {
   box.replaceChildren();
 
   const me = currentProfile();
-  const nameInput = textInput(me?.name ?? '', () => {});
+  const nameInput = textInput(me?.name ?? '', () => { settingsDirty = true; });
   let selected = PRESET_IDS.includes(me?.theme?.preset) ? me.theme.preset : 'paper';
   let mode = me?.theme?.mode === 'dark' ? 'dark' : 'light';
   const presetGrid = el('div', { class: 'preset-grid', role: 'radiogroup', 'aria-label': t('themeColors') });
@@ -1168,6 +1283,7 @@ function renderSettings() {
   });
   const updateSelection = (id) => {
     selected = id;
+    settingsDirty = true;
     presetButtons.forEach((b, i) => {
       const on = PRESETS[i].id === id;
       b.classList.toggle('is-selected', on);
@@ -1179,6 +1295,7 @@ function renderSettings() {
   const modeGroup = segmented('mode', [['light', t('light')], ['dark', t('dark')]], mode);
   modeGroup.addEventListener('change', (e) => {
     mode = e.target.value;
+    settingsDirty = true;
     applyTheme({ theme: { preset: selected, mode } });
   });
   box.append(
@@ -1195,6 +1312,7 @@ function renderSettings() {
           class: 'btn',
           text: t('resetTheme'),
           onclick: () => {
+            settingsDirty = true;
             updateSelection('paper');
             mode = 'light';
             modeGroup.querySelector('input[value="light"]').checked = true;
@@ -1205,21 +1323,23 @@ function renderSettings() {
     )
   );
 
-  const currencyInput = el('input', { type: 'text', value: state.settings.currencyCode, maxlength: '3', placeholder: 'PLN', 'aria-label': t('currency') });
+  const currencyInput = el('input', { type: 'text', value: state.settings.currencyCode, maxlength: '3', placeholder: 'PLN', 'aria-label': t('currency'), oninput: () => { settingsDirty = true; } });
   const langGroup = segmented('lang', [['en', 'English'], ['pl', 'Polski']], state.settings.language);
+  langGroup.addEventListener('change', () => { settingsDirty = true; });
   const catBox = el('div', { class: 'stack' });
   const renderCats = () => {
     catBox.replaceChildren(
       ...state.settings.categories.map((cat, idx) =>
         el('div', { class: 'form-grid cat-row' },
           el('span', { class: 'cat-dot', style: `background:${colorForCategory(cat)}`, 'aria-hidden': 'true' }),
-          field(t('label'), textInput(cat, (v) => (state.settings.categories[idx] = v))),
+          field(t('label'), textInput(cat, (v) => { state.settings.categories[idx] = v; settingsDirty = true; })),
           el('button', {
             type: 'button',
             class: 'btn btn-danger',
             text: t('remove'),
             onclick: () => {
               state.settings.categories.splice(idx, 1);
+              settingsDirty = true;
               renderCats();
             },
           })
@@ -1231,6 +1351,7 @@ function renderSettings() {
         text: t('add'),
         onclick: () => {
           state.settings.categories.push('');
+          settingsDirty = true;
           renderCats();
         },
       })
@@ -1265,6 +1386,8 @@ function renderSettings() {
               categories: state.settings.categories.filter((c) => c.trim()),
             });
             await refreshState();
+            settingsDirty = false;
+            renderMonthOptions();
             renderSettings();
             renderMonth();
             notify('ok', t('saved'));
@@ -1346,7 +1469,7 @@ async function renderLeftovers(historyData) {
                   type: 'button',
                   class: 'btn btn-danger',
                   text: t('remove'),
-                  onclick: (e) => withBusy(e.currentTarget, async () => {
+                  onclick: () => showConfirm(t('confirmDelete'), async () => {
                     try {
                       const { leftovers } = await api('DELETE', `/api/leftovers/${entry.id}`);
                       renderLeftovers({ ...data, leftovers });
@@ -1396,16 +1519,22 @@ function showErrorMessage(err) {
 
 async function init() {
   $('#profile-switch').addEventListener('change', (e) => setProfile(Number(e.target.value)));
-  $('#month-switch').addEventListener('change', (e) => e.target.value && loadMonth(e.target.value));
+  $('#month-switch').addEventListener('change', async (e) => {
+    if (!e.target.value) return;
+    await flushAutosave();
+    await loadMonth(e.target.value);
+  });
   for (const dialog of document.querySelectorAll('dialog')) {
-    dialog.querySelector('.panel-close')?.addEventListener('click', () => dialog.close());
+    dialog.querySelector('.panel-close')?.addEventListener('click', () => requestClose(dialog));
     dialog.addEventListener('click', (e) => {
-      if (e.target === dialog && dialog.id !== 'dlg-pick') dialog.close();
+      if (e.target === dialog && dialog.id !== 'dlg-pick') requestClose(dialog);
+    });
+    dialog.addEventListener('cancel', (e) => {
+      if (dialog.id === 'dlg-pick' && !state.profileId) return;
+      e.preventDefault();
+      requestClose(dialog);
     });
   }
-  $('#dlg-pick').addEventListener('cancel', (e) => {
-    if (!state.profileId) e.preventDefault();
-  });
   $('#dlg-settings').addEventListener('close', () => applyTheme(currentProfile()));
   const syncTopbarH = () => {
     const h = document.querySelector('.topbar')?.offsetHeight ?? 84;
@@ -1425,9 +1554,14 @@ async function init() {
   });
   $('#btn-create-month').addEventListener('click', (e) => withBusy(e.currentTarget, async () => {
     try {
-      state.month = await api('POST', '/api/months', { ym: state.currentYm });
-      await refreshState();
-      await loadMonths();
+      await createMonth();
+    } catch (err) {
+      showErrorMessage(err);
+    }
+  }));
+  $('#btn-new-month').addEventListener('click', (e) => withBusy(e.currentTarget, async () => {
+    try {
+      await createMonth();
     } catch (err) {
       showErrorMessage(err);
     }

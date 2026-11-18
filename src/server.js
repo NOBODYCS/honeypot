@@ -105,10 +105,10 @@ export function startServer({ dbPath, port }) {
       }
     } catch (err) {
       if (err instanceof ApiError) {
-        sendJson(res, err.status, { error: err.message });
+        sendJson(res, err.status, { error: err.message, ...(err.code ? { code: err.code } : {}) });
       } else {
         console.error(err);
-        sendJson(res, 500, { error: 'internal server error' });
+        sendJson(res, 500, { error: 'internal server error', code: 'internal' });
       }
     }
   });

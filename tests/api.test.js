@@ -327,3 +327,68 @@ test('state exposes most recently closed month', async () => {
   const s = await call('GET', '/api/state');
   assert.equal(s.body.mostRecentClosedYm, '2026-01');
 });
+
+test('plan PUT preserves item ids and never FK-fails when expenses are linked', async () => {
+  await call('POST', '/api/months', { ym: '2026-01' });
+  const plan = await call('PUT', '/api/months/2026-01/plan', {
+    salaries: { 1: 100000, 2: 100000 },
+    items: [{ kind: 'variable', label: 'Groceries', amountCents: 50000 }],
+  });
+  const itemId = plan.body.items[0].id;
+  await call('POST', '/api/months/2026-01/expenses', {
+    date: '2026-01-05', category: 'Groceries', description: 'shop', amountCents: 12000, planItemId: itemId, payerProfileId: null,
+  });
+
+  const edited = await call('PUT', '/api/months/2026-01/plan', {
+    salaries: { 1: 100000, 2: 100000 },
+    items: [
+      { id: itemId, kind: 'variable', label: 'Groceries', amountCents: 60000 },
+      { kind: 'fixed', label: 'Rent', amountCents: 200000 },
+    ],
+  });
+  assert.equal(edited.status, 200, 'plan edit after linking an expense must not 500');
+  assert.equal(edited.body.items.find((i) => i.id === itemId).amountCents, 60000, 'kept item must keep its id');
+  const after = await call('GET', '/api/months/2026-01');
+  assert.equal(after.body.expenses[0].planItemId, itemId, 'expense link must survive a plan edit');
+
+  const removed = await call('PUT', '/api/months/2026-01/plan', {
+    salaries: { 1: 100000, 2: 100000 },
+    items: [{ kind: 'fixed', label: 'Rent', amountCents: 200000 }],
+  });
+  assert.equal(removed.status, 200);
+  const after2 = await call('GET', '/api/months/2026-01');
+  assert.equal(after2.body.expenses[0].planItemId, null, 'removing a linked item orphans the expense instead of failing');
+});
+
+test('PUT /api/expenses/:id edits an expense with validation', async () => {
+  await call('POST', '/api/months', { ym: '2026-02' });
+  await call('PUT', '/api/months/2026-02/plan', { salaries: { 1: 1, 2: 1 }, items: [] });
+  const added = await call('POST', '/api/months/2026-02/expenses', {
+    date: '2026-02-01', category: 'Transport', description: 'Taxi 999', amountCents: 99900, planItemId: null, payerProfileId: 1,
+  });
+  const id = added.body.expenses[0].id;
+  const r = await call('PUT', `/api/expenses/${id}`, {
+    date: '2026-02-02', category: 'Transport', description: 'Taxi 99', amountCents: 9900, planItemId: null, payerProfileId: 1,
+  });
+  assert.equal(r.status, 200);
+  assert.equal(r.body.expenses[0].description, 'Taxi 99');
+  assert.equal(r.body.expenses[0].amountCents, 9900);
+  await assert.rejects(
+    () => call('PUT', `/api/expenses/${id}`, { date: '2026-03-01', category: 'A', description: 'x', amountCents: 1, planItemId: null, payerProfileId: null }),
+    (e) => e instanceof ApiError && e.status === 400 && e.code === 'invalid'
+  );
+});
+
+test('PUT /api/settings dedupes and trims categories; ApiError carries codes', async () => {
+  const { body } = await call('PUT', '/api/settings', { categories: ['Food', 'Food', ' food ', ''] });
+  assert.deepEqual(body.categories, ['Food']);
+  await call('POST', '/api/months', { ym: '2026-01' });
+  await assert.rejects(
+    () => call('POST', '/api/months', { ym: '2026-01' }),
+    (e) => e instanceof ApiError && e.status === 409 && e.code === 'month_exists'
+  );
+  await assert.rejects(
+    () => call('PUT', '/api/months/2026-01/plan', { salaries: {}, items: [{ kind: 'fixed', label: '', amountCents: 1 }] }),
+    (e) => e.status === 400 && e.code === 'invalid'
+  );
+});
