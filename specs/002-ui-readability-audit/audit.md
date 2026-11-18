@@ -181,6 +181,25 @@ contrast re-measured from the final stylesheet tokens (all text pairs >= 4.5:1, 
   per-profile "Reset to default" just re-selects the paper preset.
 - Dialog panels compacted so default content fits 100dvh without scrolling.
 
+## Round 4 — 6 preset families, each light+dark (2026-11-18)
+
+- 6 presets: paper, ink, sunrise, berry, ocean, contrast — each with `data-mode` light/dark
+  variants (12 combos). Structure (fonts/radii/density/shadows) varies per family; colors per
+  family+mode. Settings: preset picker + light/dark toggle per profile, live preview, one Save.
+- All 12 combos re-measured from shipped CSS: text >= 4.5:1, borders >= 3:1.
+- Server: THEME_PRESETS list, preset+mode validation, legacy themes normalize (preset=paper,
+  mode=light). Seeds: A=paper/light, B=berry/dark.
+
+## Round 5 — split semantics & per-side layout (2026-11-18)
+
+- Split bar is explicitly "share of the shared plan (by salary)" — never "% of the pot".
+  Fairness line states the definition: equal % of each partner's own income (both pay X%).
+  Each partner column shows their share of plan AND their % of own income.
+- Coverage bar = who fronted what % of money actually spent so far (A / B / pot).
+- Hover/focus info tips (small "i", keyboard-focusable, WCAG-safe tooltip) explain each bar.
+- Each partner's info is on their own side, color-coded: side A = accent, side B = accent-2
+  (side panels, figures columns).
+
 ## Guidelines checked against
 - WCAG 2.2 (W3C): SC 1.4.3 contrast ≥ 4.5:1 normal / 3:1 large text; SC 1.4.11 non-text
   ≥ 3:1; SC 2.4.7 visible focus; SC 2.5.8 target size ≥ 24×24px (44×44px recommended —

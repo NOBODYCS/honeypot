@@ -27,6 +27,7 @@ function getProfiles(db) {
     .map((r) => {
       const theme = JSON.parse(r.theme_json);
       if (!THEME_PRESETS.includes(theme.preset)) theme.preset = THEME_PRESETS[0];
+      if (!['light', 'dark'].includes(theme.mode)) theme.mode = 'light';
       return { id: r.id, name: r.name, theme };
     });
 }

@@ -90,12 +90,19 @@ const I18N = {
     paidByStrip: 'Paid by {name}',
     resetTheme: 'Reset to default',
     presetPaper: 'Paper',
-    presetPaperDark: 'Paper dark',
     presetInk: 'Ink',
+    presetSunrise: 'Sunrise',
+    presetBerry: 'Berry',
+    presetOcean: 'Ocean',
     presetContrast: 'High contrast',
-    splitOfPlan: 'Split of the shared plan',
+    splitOfPlan: 'Split of the shared plan (by salary)',
+    ofPlan: 'of the shared plan',
     coversSpending: 'Who covers spending so far',
-    fairIncome: 'Each side pays {pct}% of their own income — equal, so fair by income',
+    ofIncome: '% of own income',
+    fairIncome: 'Fair share = equal % of own income — both pay {pct}%',
+    tipSplit: "The bar shows each side's share of the shared plan, proportional to salary — not a share of the pot. The pot only pays; it owns nothing.",
+    tipCoverage: 'Of the money spent so far: who fronted it personally vs what the pot paid.',
+    tipIncome: 'Fair share means both partners spend the same % of their own income on shared costs.',
   },
   pl: {
     profileLabel: 'Aktualny profil',
@@ -186,12 +193,19 @@ const I18N = {
     paidByStrip: 'Zapłacił(a): {name}',
     resetTheme: 'Przywróć domyślne',
     presetPaper: 'Papier',
-    presetPaperDark: 'Papier — ciemny',
     presetInk: 'Atrament',
+    presetSunrise: 'Wschód słońca',
+    presetBerry: 'Jagoda',
+    presetOcean: 'Ocean',
     presetContrast: 'Wysoki kontrast',
-    splitOfPlan: 'Podział planu wspólnego',
+    splitOfPlan: 'Podział planu wspólnego (wg pensji)',
+    ofPlan: 'planu wspólnego',
     coversSpending: 'Kto pokrywa wydatki do tej pory',
-    fairIncome: 'Każda strona płaci {pct}% własnego dochodu — równo, czyli uczciwie',
+    ofIncome: '% własnego dochodu',
+    fairIncome: 'Uczciwy podział = równy % własnego dochodu — obie strony płacą po {pct}%',
+    tipSplit: 'Pasek pokazuje udział każdej strony w planie wspólnym, proporcjonalny do pensji — nie udział w puli. Pula tylko płaci, nic nie posiada.',
+    tipCoverage: 'Z już wydanych pieniędzy: kto zapłacił osobiście, a co zapłaciła pula.',
+    tipIncome: 'Uczciwy podział oznacza, że obie osoby przeznaczają taki sam % własnej pensji na koszty wspólne.',
   },
 };
 
@@ -266,20 +280,22 @@ const THEME_PROPS = [
   '--line', '--line-2', '--paper', '--surface', '--surface-1', '--surface-2',
 ];
 
-const PRESET_IDS = ['paper', 'paper-dark', 'ink', 'contrast'];
+const PRESET_IDS = ['paper', 'ink', 'sunrise', 'berry', 'ocean', 'contrast'];
 
 const PRESETS = [
   { id: 'paper', key: 'presetPaper', dots: ['#faf6ef', '#ffffff', '#1f5f5b'] },
-  { id: 'paper-dark', key: 'presetPaperDark', dots: ['#1c1811', '#241f17', '#7fc4bb'] },
-  { id: 'ink', key: 'presetInk', dots: ['#101014', '#17171c', '#ffb454'] },
+  { id: 'ink', key: 'presetInk', dots: ['#f2f3f5', '#ffffff', '#b45309'] },
+  { id: 'sunrise', key: 'presetSunrise', dots: ['#fdf3ec', '#fffaf6', '#c2410c'] },
+  { id: 'berry', key: 'presetBerry', dots: ['#fbf5f7', '#ffffff', '#9d174d'] },
+  { id: 'ocean', key: 'presetOcean', dots: ['#eef6fa', '#ffffff', '#0369a1'] },
   { id: 'contrast', key: 'presetContrast', dots: ['#ffffff', '#f2f2f2', '#0b3d91'] },
 ];
 
 function applyTheme(profile) {
   const root = document.documentElement;
   for (const prop of THEME_PROPS) root.style.removeProperty(prop);
-  delete root.dataset.mode;
   root.dataset.theme = PRESET_IDS.includes(profile?.theme?.preset) ? profile.theme.preset : 'paper';
+  root.dataset.mode = profile?.theme?.mode === 'dark' ? 'dark' : 'light';
 }
 
 async function withBusy(btn, fn) {
@@ -684,7 +700,13 @@ function shareHint() {
   const nameB = state.profiles[1]?.name ?? 'B';
   if (combined <= 0) return t('noItems');
   const incomePct = pct(state.month?.summary?.sharedPlannedTotal ?? 0, combined);
-  return `${nameA} ${pct(sal[1], combined)}% · ${nameB} ${pct(sal[2], combined)}% — ${t('fairIncome', { pct: incomePct })}`;
+  return `${nameA} ${pct(sal[1], combined)}% · ${nameB} ${pct(sal[2], combined)}% ${t('ofPlan')} — ${t('fairIncome', { pct: incomePct })}`;
+}
+
+function infoTip(text) {
+  return el('span', { class: 'info-tip', tabindex: '0' },
+    el('i', { class: 'info-icon', 'aria-hidden': 'true', text: 'i' }),
+    el('span', { class: 'tip', role: 'note', text }));
 }
 
 function renderFigures() {
@@ -695,13 +717,18 @@ function renderFigures() {
 
   const pA = pct(s.shares.A * 100, 100);
   const pB = pct(s.shares.B * 100, 100);
+  const incomePct = s.combinedIncome > 0 ? pct(s.sharedPlannedTotal, s.combinedIncome) : null;
   const planBlock = el('div', { class: 'split-block' },
-    el('h3', { text: t('splitOfPlan') }),
+    el('div', { class: 'block-head' },
+      el('h3', { text: t('splitOfPlan') }),
+      infoTip(t('tipSplit'))),
     splitBar([['seg-a', s.shares.A * 100], ['seg-b', s.shares.B * 100]], `${names.A} ${pA}%, ${names.B} ${pB}%`),
     el('p', { class: 'split-legend' },
       legendItem('seg-a', `${names.A} — ${pA}%`),
       legendItem('seg-b', `${names.B} — ${pB}%`)),
-    el('p', { class: 'hint', text: s.combinedIncome > 0 ? t('fairIncome', { pct: pct(s.sharedPlannedTotal, s.combinedIncome) }) : t('noItems') })
+    el('div', { class: 'block-head' },
+      el('p', { class: 'hint', text: incomePct != null ? t('fairIncome', { pct: incomePct }) : t('noItems') }),
+      infoTip(t('tipIncome')))
   );
 
   const potPaid = s.actualSpent - s.fronted.A - s.fronted.B;
@@ -709,7 +736,9 @@ function renderFigures() {
   const fB = pct(s.fronted.B, s.actualSpent);
   const fPot = pct(potPaid, s.actualSpent);
   const covBlock = el('div', { class: 'split-block' },
-    el('h3', { text: `${t('coversSpending')} — ${fmtMoney(s.actualSpent)}` }),
+    el('div', { class: 'block-head' },
+      el('h3', { text: `${t('coversSpending')} — ${fmtMoney(s.actualSpent)}` }),
+      infoTip(t('tipCoverage'))),
     splitBar([['seg-a', fA], ['seg-b', fB], ['seg-pot', fPot]], `${names.A} ${fA}%, ${names.B} ${fB}%, ${t('pot')} ${fPot}%`),
     el('p', { class: 'split-legend' },
       legendItem('seg-a', `${names.A} ${fA}%`),
@@ -720,8 +749,9 @@ function renderFigures() {
   const cols = el('div', { class: 'partner-cols' },
     ...['A', 'B'].map((p) =>
       el('section', { class: 'partner-col' },
-        el('h3', { text: names[p] }),
+        el('h3', { class: p === 'A' ? 'who-a' : 'who-b', text: `${names[p]} — ${p === 'A' ? pA : pB}% ${t('ofPlan')}` }),
         figRow(t('transferAfterPayday'), fmtMoney(s.contributions[p])),
+        figRow(t('ofIncome'), incomePct != null ? `${incomePct}%` : t('none')),
         figRow(t('guaranteedLeft'), fmtMoney(s.guaranteedLeft[p])),
         figRow(t('plannedLeft'), fmtMoney(s.plannedLeft[p])),
         figRow(t('projectedLeft'), fmtMoney(s.projectedLeft[p]))
@@ -974,6 +1004,7 @@ function renderSettings() {
   for (const p of state.profiles) {
     const nameInput = textInput(p.name, () => {});
     let selected = PRESET_IDS.includes(p.theme?.preset) ? p.theme.preset : 'paper';
+    let mode = p.theme?.mode === 'dark' ? 'dark' : 'light';
     const presetGrid = el('div', { class: 'preset-grid', role: 'radiogroup', 'aria-label': t('themeColors') });
     const presetButtons = PRESETS.map((pr) => {
       const btn = el('button', {
@@ -995,21 +1026,32 @@ function renderSettings() {
         b.classList.toggle('is-selected', on);
         b.setAttribute('aria-checked', on ? 'true' : 'false');
       });
-      applyTheme({ theme: { preset: id } });
+      applyTheme({ theme: { preset: id, mode } });
     };
     presetGrid.append(...presetButtons);
-    profileEditors.push({ id: p.id, nameInput, getPreset: () => selected });
+    const modeGroup = segmented(`mode-${p.id}`, [['light', t('light')], ['dark', t('dark')]], mode);
+    modeGroup.addEventListener('change', (e) => {
+      mode = e.target.value;
+      applyTheme({ theme: { preset: selected, mode } });
+    });
+    profileEditors.push({ id: p.id, nameInput, getTheme: () => ({ preset: selected, mode }) });
     box.append(
       el('div', { class: 'stack' },
         el('h3', { text: p.name }),
         field(t('label'), nameInput),
         field(t('themeColors'), presetGrid),
+        field(t('mode'), modeGroup),
         el('div', { class: 'form-grid' },
           el('button', {
             type: 'button',
             class: 'btn',
             text: t('resetTheme'),
-            onclick: () => updateSelection('paper'),
+            onclick: () => {
+              updateSelection('paper');
+              mode = 'light';
+              modeGroup.querySelector('input[value="light"]').checked = true;
+              applyTheme({ theme: { preset: 'paper', mode: 'light' } });
+            },
           })
         )
       )
@@ -1066,7 +1108,7 @@ function renderSettings() {
         onclick: (e) => withBusy(e.currentTarget, async () => {
           try {
             for (const p of profileEditors) {
-              await api('PUT', `/api/profiles/${p.id}`, { name: p.nameInput.value, theme: { preset: p.getPreset() } });
+              await api('PUT', `/api/profiles/${p.id}`, { name: p.nameInput.value, theme: p.getTheme() });
             }
             await api('PUT', '/api/settings', {
               currencyCode: currencyInput.value.toUpperCase(),

@@ -73,7 +73,9 @@ test('PUT /api/profiles/:id updates name and merges theme', async () => {
 test('profiles are seeded with theme presets and accept preset changes', async () => {
   const state = await call('GET', '/api/state');
   assert.equal(state.body.profiles[0].theme.preset, 'paper');
-  assert.equal(state.body.profiles[1].theme.preset, 'paper-dark');
+  assert.equal(state.body.profiles[0].theme.mode, 'light');
+  assert.equal(state.body.profiles[1].theme.preset, 'berry');
+  assert.equal(state.body.profiles[1].theme.mode, 'dark');
   const { body } = await call('PUT', '/api/profiles/1', { theme: { preset: 'ink' } });
   assert.equal(body.theme.preset, 'ink');
   await assert.rejects(

@@ -57,9 +57,12 @@ CREATE TABLE IF NOT EXISTS leftover_entries (
 );
 `;
 
-export const THEME_PRESETS = ['paper', 'paper-dark', 'ink', 'contrast'];
+export const THEME_PRESETS = ['paper', 'ink', 'sunrise', 'berry', 'ocean', 'contrast'];
 
-export const DEFAULT_THEMES = [{ preset: 'paper' }, { preset: 'paper-dark' }];
+export const DEFAULT_THEMES = [
+  { preset: 'paper', mode: 'light' },
+  { preset: 'berry', mode: 'dark' },
+];
 
 export const DEFAULT_SETTINGS = {
   currency_code: 'EUR',

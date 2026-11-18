@@ -49,10 +49,11 @@ name + personal expenses list. Settings / History / Leftover log open as slide-o
 on the same page and MUST fit on screen at default viewport size without scrolling (internal
 scroll only as a fallback). Every field is editable by either profile at any time while the
 month is open — profile choice is prefill convenience, never a permission. Each profile picks
-one of the predefined FULL-theme presets from Settings (paper / paper-dark / ink / contrast —
-each preset changes colors, fonts, radii, density and shadows together, dark mode included) via
-the `data-theme` attribute; layout and information stay identical for both profiles — styles
-only, never layout. Presets are pre-verified for contrast; free-form color input is not allowed.
+one of the predefined FULL-theme presets from Settings (paper / ink / sunrise / berry / ocean /
+contrast — six families, each with a light AND a dark variant via `data-mode`, changing colors,
+fonts, radii, density and shadows together) via the `data-theme` + `data-mode` attributes;
+layout and information stay identical for both profiles — styles only, never layout. Presets
+are pre-verified for contrast; free-form color input is not allowed.
 
 ### VIII. i18n from day one
 English UI by default with a language switch from the start; all numbers and dates via
@@ -86,8 +87,11 @@ step.
 - The month view MUST make the money split obvious at a glance: a share bar (% per side of the
   shared plan, adjustable via the salary inputs), a live coverage bar (who fronted what % of
   actual spending vs the pot — the payer pick on each expense), per-partner leftover rows, the
-  pot balance and the settle-up line, plus the equal-%-of-own-income fairness note. Plain-
-  language labels only.
+  pot balance and the settle-up line, plus the equal-%-of-own-income fairness note. Fair share
+  is DEFINED as an equal % of each partner's own income; the UI must say what every % means
+  (share of the shared plan, not of the pot) via plain-language labels and small hover/focus
+  info tips — explicit, never in-your-face. Each partner's info lives on their own side
+  (color-coded: side A = accent, side B = accent-2), never mixed.
 - UI MUST scale gracefully: text resizable to 200% without loss of content or function
   (SC 1.4.4), content reflows at 320 CSS px width without two-dimensional scrolling (SC
   1.4.10), controls use `min-height` (never fixed `height`) and `rem` font sizes with the
@@ -129,10 +133,14 @@ change, a semantic version bump (MAJOR for removed/redefined principles, MINOR f
 principles/sections, PATCH for clarifications), and a change-log entry. All PRs must verify
 compliance; any complexity beyond the principles above must be justified in the PR.
 
-**Version**: 1.2.0 | **Ratified**: 2026-11-17 | **Last Amended**: 2026-11-18
+**Version**: 1.3.0 | **Ratified**: 2026-11-17 | **Last Amended**: 2026-11-18
 
 ## Change Log
 
+- **1.3.0 (2026-11-18)** — MINOR: six preset families (paper/ink/sunrise/berry/ocean/
+  contrast), each with light + dark mode. Split semantics made explicit in the UI: share bar =
+  % of the shared plan by salary (not of the pot), fairness = equal % of own income, hover/focus
+  info tips on the figures, per-partner sides color-coded (accent / accent-2).
 - **1.2.0 (2026-11-18)** — MINOR: reworked per-profile theming from free-form colors to
   predefined full-theme presets (`data-theme`, dark mode = its own preset; fixes dark mode
   being clobbered by inline colors). Renamed "personal obligatory" to "personal expenses".
