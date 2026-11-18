@@ -16,30 +16,46 @@ const MIME = {
   '.json': 'application/json; charset=utf-8',
 };
 
+const SECURITY_HEADERS = {
+  'x-content-type-options': 'nosniff',
+  'x-frame-options': 'DENY',
+  'content-security-policy': "default-src 'self'; img-src 'self' data:; style-src 'self'; script-src 'self'; connect-src 'self'; frame-ancestors 'none'",
+};
+
 function sendJson(res, status, body) {
   const data = JSON.stringify(body);
   res.writeHead(status, {
+    ...SECURITY_HEADERS,
     'content-type': 'application/json; charset=utf-8',
     'cache-control': 'no-store',
   });
   res.end(data);
 }
 
-function sendStatic(res, urlPath) {
+function sendStatic(req, res, urlPath) {
   let filePath = path.normalize(path.join(PUBLIC_DIR, urlPath));
   if (!filePath.startsWith(PUBLIC_DIR)) {
-    res.writeHead(403);
+    res.writeHead(403, SECURITY_HEADERS);
     res.end('Forbidden');
     return;
   }
+  let size = 0;
   if (urlPath === '/' || !fs.existsSync(filePath) || fs.statSync(filePath).isDirectory()) {
     filePath = path.join(PUBLIC_DIR, 'index.html');
   }
   const ext = path.extname(filePath);
-  res.writeHead(200, {
+  const headers = {
+    ...SECURITY_HEADERS,
     'content-type': MIME[ext] ?? 'application/octet-stream',
     'cache-control': 'no-cache',
-  });
+  };
+  if (req.method === 'HEAD') {
+    size = fs.statSync(filePath).size;
+    res.writeHead(200, { ...headers, 'content-length': size });
+    res.end();
+    return;
+  }
+  res.writeHead(200, headers);
   fs.createReadStream(filePath).pipe(res);
 }
 
@@ -71,6 +87,7 @@ export function startServer({ dbPath, port }) {
   const api = createApi(db);
 
   const server = http.createServer(async (req, res) => {
+    res.on('error', () => {});
     try {
       const url = new URL(req.url, 'http://localhost');
       if (url.pathname.startsWith('/api/')) {
@@ -78,7 +95,7 @@ export function startServer({ dbPath, port }) {
         const result = await api.handle(req.method, url.pathname, body);
         sendJson(res, result.status, result.body);
       } else if (req.method === 'GET' || req.method === 'HEAD') {
-        sendStatic(res, url.pathname);
+        sendStatic(req, res, url.pathname);
       } else {
         sendJson(res, 405, { error: 'method not allowed' });
       }
@@ -86,6 +103,7 @@ export function startServer({ dbPath, port }) {
       if (err instanceof ApiError) {
         sendJson(res, err.status, { error: err.message });
       } else {
+        console.error(err);
         sendJson(res, 500, { error: 'internal server error' });
       }
     }

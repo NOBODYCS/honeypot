@@ -232,6 +232,10 @@ test('US4: expense add/delete with validation, plan-vs-actual, settle-up', async
     () => call('POST', '/api/months/2026-03/expenses', { date: '2026-03-01', description: 'X', amountCents: 100, planItemId: 99999 }),
     (e) => e instanceof ApiError && e.status === 400
   );
+  await assert.rejects(
+    () => call('POST', '/api/months/2026-03/expenses', { date: '2026-03-32', description: 'X', amountCents: 100 }),
+    (e) => e instanceof ApiError && e.status === 400
+  );
 
   const del = await call('DELETE', `/api/expenses/${added.body.expenses[0].id}`);
   assert.equal(del.body.expenses.length, 1);

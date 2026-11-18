@@ -183,7 +183,8 @@ const el = (tag, attrs = {}, ...children) => {
     if (k.startsWith('on')) node.addEventListener(k.slice(2), v);
     else if (k === 'class') node.className = v;
     else if (k === 'text') node.textContent = v;
-    else node.setAttribute(k, v);
+    else if (v === true) node.setAttribute(k, '');
+    else if (v !== false && v != null) node.setAttribute(k, v);
   }
   for (const child of children) {
     if (child == null) continue;
@@ -208,8 +209,11 @@ function applyI18n() {
 }
 
 let numberFormatter;
+let numberFormatterKey;
 function fmtMoney(cents) {
-  if (!numberFormatter || numberFormatter.resolvedOptions().currency !== state.settings.currencyCode) {
+  const key = `${state.settings.language}|${state.settings.currencyCode}`;
+  if (numberFormatterKey !== key) {
+    numberFormatterKey = key;
     numberFormatter = new Intl.NumberFormat(state.settings.language, {
       style: 'currency',
       currency: state.settings.currencyCode,
@@ -324,8 +328,6 @@ async function refreshState() {
 }
 
 state.mostRecentClosedYm = null;
-
-
 
 /* ---------- month view ---------- */
 
@@ -589,7 +591,10 @@ function renderExpenses() {
   const form = $('#expense-form');
   form.replaceChildren();
   if (canEdit) {
-    const dateInput = el('input', { type: 'date', value: `${state.month.ym}-01`, min: `${state.month.ym}-01`, max: `${state.month.ym}-31` });
+    const [yr, mo] = state.month.ym.split('-').map(Number);
+    const lastDay = new Date(Date.UTC(yr, mo, 0)).getUTCDate();
+    const lastD2 = String(lastDay).padStart(2, '0');
+    const dateInput = el('input', { type: 'date', value: `${state.month.ym}-01`, min: `${state.month.ym}-01`, max: `${state.month.ym}-${lastD2}` });
     const descInput = el('input', { type: 'text', placeholder: t('description') });
     const amountInput = el('input', { type: 'number', step: '0.01', min: '0.01', placeholder: t('amount') });
     const itemSelect = el('select', {},
@@ -647,8 +652,12 @@ function renderExpenses() {
                   type: 'button',
                   text: t('remove'),
                   onclick: async () => {
-                    state.month = await api('DELETE', `/api/expenses/${e.id}`);
-                    renderMonth();
+                    try {
+                      state.month = await api('DELETE', `/api/expenses/${e.id}`);
+                      renderMonth();
+                    } catch (err) {
+                      alert(err.message);
+                    }
                   },
                 })
               : null
@@ -774,9 +783,13 @@ function renderSettings() {
             for (let i = 0; i < colorFields.length; i++) {
               theme[['accent', 'background', 'surface', 'text'][i]] = colorFields[i].querySelector('input').value;
             }
-            await api('PUT', `/api/profiles/${p.id}`, { name: nameInput.value, theme });
-            await refreshState();
-            renderSettings();
+            try {
+              await api('PUT', `/api/profiles/${p.id}`, { name: nameInput.value, theme });
+              await refreshState();
+              renderSettings();
+            } catch (err) {
+              alert(err.message);
+            }
           },
         })
       )
@@ -823,14 +836,18 @@ function renderSettings() {
         type: 'button',
         text: t('save'),
         onclick: async () => {
-          await api('PUT', '/api/settings', {
-            currencyCode: currencyInput.value.toUpperCase(),
-            language: langSelect.value,
-            categories: state.settings.categories.filter((c) => c.trim()),
-          });
-          await refreshState();
-          renderSettings();
-          renderMonth();
+          try {
+            await api('PUT', '/api/settings', {
+              currencyCode: currencyInput.value.toUpperCase(),
+              language: langSelect.value,
+              categories: state.settings.categories.filter((c) => c.trim()),
+            });
+            await refreshState();
+            renderSettings();
+            renderMonth();
+          } catch (err) {
+            alert(err.message);
+          }
         },
       })
     ),
@@ -841,14 +858,22 @@ function renderSettings() {
 
 /* ---------- leftover log (US7) ---------- */
 
-async function renderLeftovers() {
+async function renderLeftovers(historyData) {
   const box = $('#leftovers-body');
   const ym = state.mostRecentClosedYm;
   if (!ym) {
     box.replaceChildren(el('p', { class: 'hint', text: t('noLeftoverMonth') }));
     return;
   }
-  const data = await api('GET', `/api/months/${ym}/history`);
+  let data = historyData;
+  if (!data) {
+    try {
+      data = await api('GET', `/api/months/${ym}/history`);
+    } catch (err) {
+      showErrorMessage(err);
+      return;
+    }
+  }
   const editableMonth = ym === state.mostRecentClosedYm;
   const amountInput = el('input', { type: 'number', step: '0.01', min: '0.01', placeholder: t('amount') });
   const noteInput = el('input', { type: 'text', placeholder: t('note') });
@@ -869,13 +894,13 @@ async function renderLeftovers() {
             text: t('addEntry'),
             onclick: async () => {
               try {
-                await api('POST', `/api/months/${ym}/leftovers`, {
+                const { leftovers } = await api('POST', `/api/months/${ym}/leftovers`, {
                   profileId: Number(profileSelect.value),
                   amountCents: parseMoney(amountInput.value),
                   category: categorySelect.value,
                   note: noteInput.value,
                 });
-                renderLeftovers();
+                renderLeftovers({ ...data, leftovers });
               } catch (err) {
                 alert(err.message);
               }
@@ -897,8 +922,12 @@ async function renderLeftovers() {
                   type: 'button',
                   text: t('remove'),
                   onclick: async () => {
-                    await api('DELETE', `/api/leftovers/${entry.id}`);
-                    renderLeftovers();
+                    try {
+                      const { leftovers } = await api('DELETE', `/api/leftovers/${entry.id}`);
+                      renderLeftovers({ ...data, leftovers });
+                    } catch (err) {
+                      alert(err.message);
+                    }
                   },
                 })
               : null
@@ -919,11 +948,17 @@ async function renderHistory() {
     return;
   }
   box.replaceChildren();
-  for (const m of closed) {
-    const data = await api('GET', `/api/months/${m.ym}/history`);
-    const section = el('section', { class: 'card' });
-    renderSummaryBody(section, data.snapshot, data);
-    box.append(el('h3', { text: m.ym }), section);
+  try {
+    const histories = await Promise.all(
+      closed.map((m) => api('GET', `/api/months/${m.ym}/history`))
+    );
+    for (const data of histories) {
+      const section = el('section', { class: 'card' });
+      renderSummaryBody(section, data.snapshot, data);
+      box.append(el('h3', { text: data.ym }), section);
+    }
+  } catch (err) {
+    showErrorMessage(err);
   }
 }
 

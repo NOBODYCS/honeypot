@@ -364,7 +364,14 @@ export function createApi(db) {
       throw new ApiError(400, 'description must be a non-empty string');
     }
     const dateRe = /^\d{4}-\d{2}-\d{2}$/;
-    if (!dateRe.test(body.date ?? '') || !body.date.startsWith(month.ym)) {
+    if (dateRe.test(body.date ?? '') && body.date.startsWith(month.ym)) {
+      const day = Number(body.date.slice(-2));
+      const [yr, mo] = month.ym.split('-').map(Number);
+      const lastDay = new Date(Date.UTC(yr, mo, 0)).getUTCDate();
+      if (day < 1 || day > lastDay) {
+        throw new ApiError(400, 'expense date must be a real day within the month');
+      }
+    } else {
       throw new ApiError(400, 'expense date must be within the month');
     }
     let planItemId = null;
