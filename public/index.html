@@ -40,7 +40,7 @@
 
     <span class="spacer"></span>
 
-    <nav class="topbar-actions" aria-label="Panels">
+    <nav class="topbar-actions" aria-label="Panels" data-i18n-aria="navPanels">
       <button type="button" class="btn" id="btn-settings" data-i18n="settings">Settings</button>
       <button type="button" class="btn" id="btn-history" data-i18n="history">History</button>
       <button type="button" class="btn" id="btn-leftovers" data-i18n="leftoverLog">Leftover log</button>
@@ -51,13 +51,13 @@
   <main class="screen">
     <aside id="side-a" class="side-panel left" aria-labelledby="side-a-title">
       <h2 id="side-a-title" class="who"><span class="who-name" id="name-a">Partner A</span></h2>
-      <section class="card stack" aria-label="Personal expenses list">
+      <section class="card stack" aria-label="Personal expenses list" data-i18n-aria="personalExpensesAria">
         <h3 data-i18n="personalObligatory">Personal obligatory</h3>
         <div id="personal-list-a"></div>
       </section>
     </aside>
 
-    <section class="center" id="center" aria-label="Month plan and spending">
+    <section class="center" id="center" aria-label="Month plan and spending" data-i18n-aria="centerAria">
       <div id="month-missing" class="empty card" hidden>
         <svg class="empty-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
           <rect x="4" y="5" width="16" height="15" rx="2" stroke="currentColor" stroke-width="1.6"/>
@@ -68,17 +68,17 @@
         <button type="button" class="btn btn-primary btn-lg" id="btn-create-month" data-i18n="createMonth">Create month</button>
       </div>
       <div id="month-body" hidden>
-        <section class="card" aria-label="Month plan">
+        <section class="card" aria-label="Month plan" data-i18n-aria="monthPlan">
           <h2 data-i18n="monthPlan">Month plan</h2>
           <div id="plan-salaries" class="stack"></div>
           <div id="plan-fixed" class="stack"></div>
           <div id="plan-variable" class="stack"></div>
         </section>
-        <section class="card" aria-label="Live figures">
+        <section class="card" aria-label="Live figures" data-i18n-aria="liveFigures">
           <h2 data-i18n="liveFigures">Live figures</h2>
           <div id="figures" class="figures"></div>
         </section>
-        <section class="card" aria-label="Spending log">
+        <section class="card" aria-label="Spending log" data-i18n-aria="spendingLog">
           <h2 data-i18n="spendingLog">Spending log</h2>
           <div id="expense-form"></div>
           <div id="expense-list"></div>
@@ -88,7 +88,7 @@
 
     <aside id="side-b" class="side-panel right" aria-labelledby="side-b-title">
       <h2 id="side-b-title" class="who"><span class="who-name" id="name-b">Partner B</span></h2>
-      <section class="card stack" aria-label="Personal expenses list">
+      <section class="card stack" aria-label="Personal expenses list" data-i18n-aria="personalExpensesAria">
         <h3 data-i18n="personalObligatory">Personal obligatory</h3>
         <div id="personal-list-b"></div>
       </section>
