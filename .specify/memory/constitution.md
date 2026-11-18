@@ -61,6 +61,34 @@ Smallest correct change. Zero-dependency server (Node.js built-ins + `node:sqlit
 single-file SQLite, static frontend with vanilla JS. No npm packages, no frameworks, no build
 step.
 
+### X. Readability and working controls (NON-NEGOTIABLE)
+- Every text/background pair MUST meet WCAG 2.2 AA: >= 4.5:1 for normal text, >= 3:1 for
+  large text (>= 24px, or >= 18.66px bold) and for non-text UI boundaries (input borders,
+  focus rings, icons) — SC 1.4.3 and 1.4.11, measured with the WCAG relative-luminance
+  formula. This applies to every design-token pair in BOTH light and dark mode, in the
+  defaults AND in any user-chosen theme.
+- User-picked theme colors (Principle VII) are never applied raw. The theme layer MUST
+  validate each pair and auto-derive safe values (adjust the text/background or clamp the
+  accent) so that no selectable combination can drop below the minimums. `--accent-ink`,
+  the muted inks, the lines, and the toast pair are always DERIVED from the chosen
+  accent/background/text — never hard-coded per mode. A "reset to default" must always be
+  one click away in Settings.
+- All interactive elements are native `<button>`/`<input>`/`<select>`/etc., keyboard
+  operable, with a visible `:focus-visible` ring (>= 3:1 against adjacent colors, SC 2.4.7)
+  and every state styled: enabled, hover, focus, pressed, disabled, loading. Every button
+  MUST have a wired handler in every state in which it is visible — dialog close buttons
+  included — and dialogs MUST be closable via button, Escape, and backdrop click.
+- The default palette is the locked design-token set in `public/styles.css` (one base +
+  1–2 accents, warm paper base, distinctive font pairing per G6). Token changes go through
+  the G6 review with the measured contrast ratios of every affected pair in the PR.
+- UI MUST scale gracefully: text resizable to 200% without loss of content or function
+  (SC 1.4.4), content reflows at 320 CSS px width without two-dimensional scrolling (SC
+  1.4.10), controls use `min-height` (never fixed `height`) and `rem` font sizes with the
+  `<meta name="text-scale" content="scale">` opt-in (never a root `font-size` override,
+  never `user-scalable=no`), button labels may wrap (no `white-space: nowrap` on
+  interactive text), and pointer targets are >= 24x24 CSS px (SC 2.5.8), bumped to ~44px
+  under `@media (pointer: coarse)`.
+
 ## Technology & Constraints
 
 - Language/runtime: JavaScript on Node.js 22+ (built-in modules only: `node:http`,
@@ -81,7 +109,10 @@ step.
 - Money rules are tested before UI work (property tests on the invariants in Principle I).
 - Validation rules from the app document (amounts > 0 in cents, expense date within month,
   `partnerShare%` ∈ [0,100], one open month) are enforced server-side.
-- UI work passes a G6 art-direction checklist review (ban list) before merge.
+- UI work passes a G6 art-direction checklist review (ban list) before merge, plus a
+  measured-contrast check (WCAG 2.2 AA ratios for every token pair in both modes, defaults
+  and user themes) and a manual keyboard pass (Tab through every control; every visible
+  button fires its action).
 - Every change goes through a PR; PRs must verify constitution compliance.
 
 ## Governance
@@ -91,4 +122,12 @@ change, a semantic version bump (MAJOR for removed/redefined principles, MINOR f
 principles/sections, PATCH for clarifications), and a change-log entry. All PRs must verify
 compliance; any complexity beyond the principles above must be justified in the PR.
 
-**Version**: 1.0.0 | **Ratified**: 2026-11-17 | **Last Amended**: 2026-11-17
+**Version**: 1.1.0 | **Ratified**: 2026-11-17 | **Last Amended**: 2026-11-18
+
+## Change Log
+
+- **1.1.0 (2026-11-18)** — MINOR: added Principle X (Readability and working controls,
+  NON-NEGOTIABLE): enforced WCAG 2.2 AA contrast on all token pairs including user-chosen
+  themes, derived (never raw) theme colors with a reset-to-default, visible focus rings and
+  all button states, and a wired handler on every visible button. Added the contrast +
+  keyboard-pass check to the development workflow.
