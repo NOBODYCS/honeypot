@@ -42,7 +42,7 @@ test('i18n: every t() key and data-i18n(-aria) key exists; no dead keys', () => 
   for (const m of app.matchAll(/\bfig\('([\w-]+)',[\s\S]{0,200}?,\s*'([\w-]+)'/g)) { used.add(m[1]); used.add(m[2]); }
   for (const m of html.matchAll(/data-i18n(?:-aria)?="([\w-]+)"/g)) used.add(m[1]);
   for (const pr of ['presetPaper', 'presetInk', 'presetSunrise', 'presetBerry', 'presetOcean', 'presetContrast']) used.add(pr);
-  for (const k of ['fixedShared', 'variableShared', 'tipFixedShared', 'tipVariableShared', 'editHint', 'readOnly', 'tipEditHint', 'tipReadOnly', 'tipClosed']) used.add(k);
+  for (const k of ['fixedShared', 'variableShared', 'tipFixedShared', 'tipVariableShared', 'editHint', 'readOnly', 'tipEditHint', 'tipReadOnly', 'tipClosed', 'tipSuggestion', 'tipSuggestNotExact']) used.add(k);
   /* attachChromeTips() builds these keys dynamically from the chrome label list */
   for (const k of ['monthPlan', 'liveFigures', 'spendingLog', 'personalObligatory', 'noMonthTitle', 'noMonthText', 'whoAreYou', 'settings', 'history', 'leftoverLog', 'closeMonth', 'newMonth', 'createMonth', 'open', 'balance']) {
     used.add(k);
@@ -293,6 +293,22 @@ test('numeric entry: no type=number anywhere, text inputs with inputmode, live f
   assert.ok(app.includes('sanitizeNumericInput') && app.includes('onblur'), 'live filtering + blur snap missing');
   assert.ok(money.includes('export function sanitizeNumericInput') && money.includes('export function parseFlexibleMoney') && money.includes('export function formatMoneyInput') && money.includes('export function formatPctInput'), 'money.js numeric helpers missing');
   assert.ok(!css.includes("input[type='number']"), 'spinner selector left in styles.css');
+});
+
+/* ---------- fair-share split suggestions (Change 3) ---------- */
+
+test('suggestions: UI cannot silently disappear (chips, apply-all, tips in en+pl, money.js fn)', () => {
+  assert.ok(money.includes('export function suggestFairSplit'), 'suggestFairSplit missing in money.js');
+  assert.ok(app.includes('sug-chip') && app.includes("id: 'btn-apply-suggestions'"), 'suggestion chip / apply-all button missing');
+  assert.ok(app.includes('function updateSuggestions') && app.includes('updateSuggestions();'), 'suggestions must recompute on draft changes');
+  assert.ok(css.includes('.sug-chip'), 'suggestion chip style missing');
+  const { en, pl } = i18n();
+  for (const k of ['applyAll', 'tipApplyAll', 'suggestionChip', 'tipSuggestion', 'tipSuggestNotExact']) {
+    assert.ok(k in en && k in pl, `suggestion key ${k} missing in en/pl`);
+  }
+  /* applying a suggestion writes a normal manual value (never silent) */
+  assert.ok(/item\.partnerSharePct = mine\.pctB/.test(app), 'apply must set partnerSharePct as a manual value');
+  assert.ok(/x\.item\.partnerSharePct = x\.pctB/.test(app), 'apply-all must set manual values');
 });
 
 test('tooltips: every live-figure caption key has a matching tooltip key in BOTH en and pl, with live-example placeholders', () => {

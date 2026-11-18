@@ -1026,6 +1026,14 @@ figure.fig .money {
   font-size: 0.8rem;
 }
 
+/* fair-share suggestion chip: dashed accent = advisory, one-click apply */
+.sug-chip {
+  border-style: dashed;
+  color: var(--accent);
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
 .personal-row input[type='text'] {
   flex: 1;
   min-width: 0;

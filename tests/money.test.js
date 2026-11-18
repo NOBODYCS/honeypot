@@ -274,3 +274,86 @@ test('numeric entry: percent blur snap is an integer 0-100, empty stays empty (a
   assert.equal(formatPctInput(null), '');
   assert.equal(formatPctInput('abc'), '0');
 });
+
+/* ---------- fair-share split suggestions (Change 3) ---------- */
+
+import { suggestFairSplit } from '../src/money.js';
+
+test('suggestions: worked example — salaries 5000/3000, 5 shared items, two 100%-A overrides totaling 400 of a 1000 plan', () => {
+  const items = [
+    { kind: 'fixed', label: 'i1', amountCents: 250000 / 10 * 2.5, partnerSharePct: 0 }, // 100% A = pctB 0
+    { kind: 'fixed', label: 'i2', amountCents: 15000, partnerSharePct: 0 }, // 100% A
+    { kind: 'variable', label: 'i3', amountCents: 20000, partnerSharePct: -1 },
+    { kind: 'variable', label: 'i4', amountCents: 20000, partnerSharePct: -1 },
+    { kind: 'variable', label: 'i5', amountCents: 20000, partnerSharePct: -1 },
+  ];
+  // overrides total 40000 (400), plan total 100000 (1000)
+  items[0].amountCents = 25000;
+  const s = suggestFairSplit(items, 500000, 300000);
+  assert.equal(s.suggestions.length, 3, 'only auto items get suggestions');
+  assert.equal(s.clamped, false);
+  // fair A total = 625 (62500); minus overridden 400 (40000) -> 225 (22500) across remaining 600
+  assert.equal(s.targetA, 22500);
+  assert.equal(s.autoTotal, 60000);
+  for (const x of s.suggestions) {
+    assert.ok(x.pctB === 62 || x.pctB === 63, `per-item pctB ~63, got ${x.pctB}`);
+    assert.ok(Number.isInteger(x.pctB) && x.pctB >= 0 && x.pctB <= 100);
+  }
+  // applying all: per-item splits still sum exactly to each item (R15)
+  for (const x of s.suggestions) {
+    const pb = Math.floor((x.item.amountCents * x.pctB) / 100);
+    assert.equal(x.item.amountCents - pb + pb, x.item.amountCents);
+  }
+});
+
+test('suggestions: applying all brings both income percentages within 1 point when amounts allow', () => {
+  for (let i = 0; i < 500; i++) {
+    const salaryA = randomCents(500000);
+    const salaryB = randomCents(500000);
+    const n = 1 + Math.floor(Math.random() * 6);
+    const items = [];
+    let total = 0;
+    for (let k = 0; k < n; k++) {
+      const amount = randomCents(50000);
+      total += amount;
+      const overridden = Math.random() < 0.3;
+      items.push({ kind: k % 2 ? 'variable' : 'fixed', amountCents: amount, partnerSharePct: overridden ? Math.floor(Math.random() * 101) : -1 });
+    }
+    const s = suggestFairSplit(items, salaryA, salaryB);
+    if (!s.suggestions.length) continue;
+    // apply all suggestions as manual values
+    for (const x of s.suggestions) x.item.partnerSharePct = x.pctB;
+    const sum = computeSummary({ salaryA, salaryB, items, expenses: [] });
+    assert.equal(sum.contributions.A + sum.contributions.B, total, 'R15: contributions still sum exactly');
+    const iA = (sum.contributions.A / salaryA) * 100;
+    const iB = (sum.contributions.B / salaryB) * 100;
+    /* integer-% rounding error is at most ~autoTotal/200 cents on each side; when the
+       remaining auto amount is small enough relative to both salaries ("amounts allow"),
+       the resulting income percentages must be within 1 point */
+    const bound = 2 / (1 / salaryA + 1 / salaryB);
+    if (!s.clamped && s.autoTotal <= bound) {
+      assert.ok(Math.abs(iA - iB) <= 1, `income pcts within 1 point: A=${iA.toFixed(3)} B=${iB.toFixed(3)} (autoTotal=${s.autoTotal}, bound=${bound.toFixed(0)})`);
+    }
+    for (const x of s.suggestions) {
+      assert.ok(Number.isInteger(x.pctB) && x.pctB >= 0 && x.pctB <= 100, '0-100 integers per item');
+    }
+  }
+});
+
+test('suggestions: no suggestions when salaries are 0 or no auto items; clamped flag when impossible', () => {
+  assert.deepEqual(suggestFairSplit([{ kind: 'fixed', amountCents: 1000 }], 0, 0).suggestions, []);
+  assert.deepEqual(suggestFairSplit([{ kind: 'fixed', amountCents: 1000, partnerSharePct: 50 }], 100, 100).suggestions, []);
+  // override too extreme: A already covers more than the fair share -> closest possible (0% A on auto)
+  const s = suggestFairSplit(
+    [
+      { kind: 'fixed', amountCents: 90000, partnerSharePct: 0 }, // 100% A
+      { kind: 'variable', amountCents: 10000, partnerSharePct: -1 },
+    ],
+    500000, 300000
+  );
+  assert.equal(s.clamped, true);
+  assert.equal(s.suggestions[0].pctB, 100, 'closest possible: auto item goes fully to B');
+  // personal items are never eligible
+  const p = suggestFairSplit([{ kind: 'personal', amountCents: 5000, ownerProfileId: 1, partnerSharePct: -1 }], 100000, 100000);
+  assert.deepEqual(p.suggestions, []);
+});

@@ -2,6 +2,39 @@ export function combinedIncome(salaryA, salaryB) {
   return salaryA + salaryB;
 }
 
+/* ---------- fair-share split suggestions (advisory only, never applied silently) ----------
+   Eligible items: shared fixed/variable items whose partnerSharePct is unset (< 0 = auto).
+   Items with a manual % are never touched. Target: if all suggestions were accepted, both
+   partners contribute the same % of their own salary, i.e. contribution(P) = share(P) ×
+   sharedTotal (equal % of own salary ⟺ salary-proportional split of the whole plan).
+   One shared integer % for all auto items = proportional per item with exact cent sums
+   (R15: each item still splits as amount − floor(amount × pctB / 100)). */
+export function suggestFairSplit(items, salaryA, salaryB) {
+  const combined = combinedIncome(salaryA, salaryB);
+  const shared = items.filter((i) => i.kind === 'fixed' || i.kind === 'variable');
+  if (combined <= 0 || shared.length === 0) return { suggestions: [], exact: false, clamped: false };
+  const total = shared.reduce((s, i) => s + i.amountCents, 0);
+  const fair = splitBySalary(total, salaryA, salaryB);
+  let manualA = 0;
+  const auto = [];
+  for (const item of shared) {
+    const pct = item.partnerSharePct;
+    if (pct != null && pct >= 0) {
+      manualA += item.amountCents - Math.floor((item.amountCents * pct) / 100);
+    } else {
+      auto.push(item);
+    }
+  }
+  const autoTotal = auto.reduce((s, i) => s + i.amountCents, 0);
+  if (autoTotal <= 0) return { suggestions: [], exact: true, clamped: false };
+  let targetA = fair.a - manualA;
+  const clamped = targetA < 0 || targetA > autoTotal;
+  targetA = Math.max(0, Math.min(autoTotal, targetA));
+  const pctA = Math.max(0, Math.min(100, Math.round((targetA * 100) / autoTotal)));
+  const suggestions = auto.map((item) => ({ item, pctB: 100 - pctA }));
+  return { suggestions, exact: !clamped, clamped, pctA, targetA, autoTotal };
+}
+
 /* ---------- spinner-free numeric entry (pure, shared client/server) ----------
    Fields are plain text inputs (inputmode decimal/numeric). Live filtering keeps only
    digits and at most one decimal separator ('.' or ',' — normalized on parse). */

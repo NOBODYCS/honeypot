@@ -10,6 +10,11 @@ This document follows anonymization rules A1–A5 and is safe to store in the pu
   close/history figure carries a plain caption plus a tooltip with a worked example computed
   from live numbers (see constitution Principle X / 1.10.0). Wording must stay aligned with
   R1–R16 (fixed costs auto-paid by the pot, pot pays pot-paid expenses).
+- 2026-11-18 (R17, advisory only): the app may SUGGEST per-item splits for shared costs so both
+  partners end up contributing the same % of their own salary (suggestFairSplit in money.js).
+  Suggestions are never applied silently, never on load, never to items with a manual %;
+  applying them writes ordinary editable partnerSharePct values. They never change the pot
+  model or close math (R1–R16 unchanged).
 
 - Cash flow made explicit: shared-pot model (R8 amended). Expenses without a payer are
   pot-paid and split by share; only payer-tagged ("fronted") expenses produce a settle-up

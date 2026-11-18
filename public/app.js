@@ -1,4 +1,4 @@
-import { computeSummary, sanitizeNumericInput, parseFlexibleMoney, formatMoneyInput, formatPctInput } from '/shared/money.js';
+import { computeSummary, sanitizeNumericInput, parseFlexibleMoney, formatMoneyInput, formatPctInput, suggestFairSplit } from '/shared/money.js';
 
 /* Honeypot frontend — vanilla JS, no build step. One screen + slide-over dialogs. */
 
@@ -174,6 +174,11 @@ const I18N = {
     tipReadOnly: 'Older closed months are read-only.',
     tipMonthClosed: 'Closed months are read-only.',
     tipContributions: 'How much each partner contributes to shared costs this month. Worked example (first row): {name} — salary {salary} of {combined} combined, shared plan {plan} → {amount}.',
+    applyAll: 'Apply all suggestions ({n})',
+    tipApplyAll: 'Accepts every suggested split at once: each auto item gets the suggested %, filled in as normal editable values you can change or reset to auto. Nothing is applied silently.',
+    suggestionChip: 'Suggested split {a}/{b} — click to accept',
+    tipSuggestion: 'The app suggests a split that evens out the salary % for both of you — {a} would pay {pa}% and {b} {pb}% of this cost. Click to accept; type your own numbers to ignore it.',
+    tipSuggestNotExact: 'An equal % of salary is not fully reachable with the remaining auto items — this {pa}/{pb} is the closest possible split for {a}/{b}.',
     tipPaid: 'How much each partner fronted personally for shared expenses; at close these are evened out by salary share. Example row: {name} fronted {amount}.',
     tipWhoAreYou: 'Pick your profile — it only prefills forms and applies your theme. Both partners can edit everything.',
   },
@@ -348,6 +353,11 @@ const I18N = {
     tipReadOnly: 'Starsze zamknięte miesiące są tylko do odczytu.',
     tipMonthClosed: 'Zamknięte miesiące są tylko do odczytu.',
     tipContributions: 'Ile każda osoba dokłada się do wspólnych kosztów w tym miesiącu. Przykład na pierwszym wierszu: {name} — pensja {salary} z {combined} łącznego dochodu, plan wspólny {plan} → {amount}.',
+    applyAll: 'Zastosuj wszystkie sugestie ({n})',
+    tipApplyAll: 'Akceptuje wszystkie sugestie naraz: każda pozycja auto dostaje sugerowany %, wpisany jako zwykłe edytowalne wartości, które możesz zmienić albo zresetować do auto. Nic nie dzieje się po cichu.',
+    suggestionChip: 'Sugerowany podział {a}/{b} — kliknij, aby zaakceptować',
+    tipSuggestion: 'Aplikacja sugeruje podział wyrównujący procent pensji obu osób — {a} płacił(a)by {pa}%, a {b} {pb}% tego kosztu. Kliknij, żeby zaakceptować; wpisz własne liczby, żeby zignorować.',
+    tipSuggestNotExact: 'Równy % pensji nie jest w pełni osiągalny na pozostałych pozycjach auto — {pa}/{pb} to najbliższy możliwy podział dla {a}/{b}.',
     tipPaid: 'Ile każda osoba zapłaciła osobiście za wspólne wydatki; przy zamknięciu są wyrównywane wg pensji. Przykładowy wiersz: {name} zapłacił(a) osobiście {amount}.',
     tipWhoAreYou: 'Wybierz swój profil — służy tylko do wstępnego wypełniania formularzy i motywu. Oboje możecie edytować wszystko.',
   },
@@ -925,6 +935,32 @@ function itemCard(item, idx, kind, owner) {
         scheduleAutosave();
       },
     });
+    /* fair-share suggestion chip on auto items (eligible only); one-click apply */
+    let sugChip = null;
+    if (pct < 0 && canEdit) {
+      const sug = suggestFairSplit(state.draft.items, sA, sB);
+      const mine = sug.suggestions.find((x) => x.item === item);
+      if (mine) {
+        const pctA = 100 - mine.pctB;
+        sugChip = el('button', {
+          type: 'button',
+          class: 'btn btn-mini sug-chip',
+          text: `${pctA}/${mine.pctB}`,
+          'aria-label': t('suggestionChip', { a: pctA, b: mine.pctB }),
+          'data-idx': String(idx),
+          onclick: () => {
+            item.partnerSharePct = mine.pctB;
+            aInput.value = String(pctA);
+            bInput.value = String(mine.pctB);
+            renderPlan();
+            renderPersonal(1, $('#personal-list-a'));
+            renderPersonal(2, $('#personal-list-b'));
+            scheduleAutosave();
+          },
+        });
+        attachTip(sugChip, sug.clamped ? 'tipSuggestNotExact' : 'tipSuggestion', { a: nameA, b: nameB, pa: pctA, pb: mine.pctB });
+      }
+    }
     const splitTip = tipWrap('splitLabel', 'tipSplitLabel', { a: nameA, b: nameB });
     splitTip.node.classList.add('field-label');
     aInput.setAttribute('aria-describedby', splitTip.tipId);
@@ -934,6 +970,7 @@ function itemCard(item, idx, kind, owner) {
       aInput,
       el('span', { class: 'split-sep', text: '/' }),
       bInput,
+      ...kids(sugChip),
       autoBtn,
       removeBtn);
   }
@@ -1004,8 +1041,28 @@ function renderPlan() {
       const ib = s && s.salaries.B > 0 ? pctStr(pct(s.contributions.B, s.salaries.B)) : t('none');
       attachTip(h, 'tipFairIncome', { a: na, b: nb, ia, ib });
       return h;
+    })(),
+    (() => {
+      const b = el('button', {
+        type: 'button',
+        class: 'btn',
+        id: 'btn-apply-suggestions',
+        text: t('applyAll', { n: 0 }),
+        hidden: true,
+        onclick: () => {
+          const sug = suggestFairSplit(state.draft.items, state.draft.salaries[1] ?? 0, state.draft.salaries[2] ?? 0);
+          for (const x of sug.suggestions) x.item.partnerSharePct = x.pctB;
+          renderPlan();
+          renderPersonal(1, $('#personal-list-a'));
+          renderPersonal(2, $('#personal-list-b'));
+          scheduleAutosave();
+        },
+      });
+      attachTip(b, 'tipApplyAll');
+      return b;
     })()
   );
+  updateSuggestions();
 
   const nameA = state.profiles[0]?.name ?? 'A';
   const nameB = state.profiles[1]?.name ?? 'B';
@@ -1035,10 +1092,43 @@ function liveSummary() {
   });
 }
 
+/* Recompute fair-share suggestion chips + the apply-all button live on every draft change. */
+function updateSuggestions() {
+  if (!state.month || !state.draft) return;
+  const sA = state.draft.salaries[1] ?? 0;
+  const sB = state.draft.salaries[2] ?? 0;
+  const sug = suggestFairSplit(state.draft.items, sA, sB);
+  const nameA = state.profiles[0]?.name ?? 'A';
+  const nameB = state.profiles[1]?.name ?? 'B';
+  for (const chip of document.querySelectorAll('.sug-chip')) {
+    const item = state.draft.items[Number(chip.dataset.idx)];
+    const mine = item && sug.suggestions.find((x) => x.item === item);
+    if (!mine || !editable()) {
+      chip.hidden = true;
+      continue;
+    }
+    chip.hidden = false;
+    const pctA = 100 - mine.pctB;
+    setText(chip, `${pctA}/${mine.pctB}`);
+    chip.setAttribute('aria-label', t('suggestionChip', { a: pctA, b: mine.pctB }));
+    const key = sug.clamped ? 'tipSuggestNotExact' : 'tipSuggestion';
+    chip.dataset.tipKey = key;
+    const tip = chip.querySelector(':scope > .tooltip');
+    if (tip) tip.textContent = t(key, { a: nameA, b: nameB, pa: pctA, pb: mine.pctB });
+  }
+  const btn = document.getElementById('btn-apply-suggestions');
+  if (btn) {
+    const n = editable() ? sug.suggestions.length : 0;
+    btn.hidden = n === 0;
+    setText(btn, t('applyAll', { n }));
+  }
+}
+
 function updateDerived() {
   if (!state.month) return;
   const hint = document.getElementById('plan-share-hint');
-  if (hint) hint.textContent = shareHint();
+  if (hint) setText(hint, shareHint());
+  updateSuggestions();
   renderFigures();
 }
 

@@ -199,10 +199,19 @@ change, a semantic version bump (MAJOR for removed/redefined principles, MINOR f
 principles/sections, PATCH for clarifications), and a change-log entry. All PRs must verify
 compliance; any complexity beyond the principles above must be justified in the PR.
 
-**Version**: 1.11.0 | **Ratified**: 2026-11-17 | **Last Amended**: 2026-11-18
+**Version**: 1.12.0 | **Ratified**: 2026-11-17 | **Last Amended**: 2026-11-18
 
 ## Change Log
 
+- **1.12.0 (2026-11-18)** — MINOR: fair-share split suggestions (advisory only). Shared
+  fixed/variable items with an empty (auto) split get a suggestion chip with one-click apply,
+  plus one "apply all" action in the plan section; suggestions recompute live on every draft
+  change. Applying fills the A%/B% inputs as normal manual values — never silent, never on
+  load, always undoable via auto. Math in money.js `suggestFairSplit`: one shared integer %
+  for all auto items so that, if accepted, both partners contribute the same % of their own
+  salary (within integer-%/R15 rounding); clamped "closest possible" case is flagged and says
+  so in the tooltip. Property-tested (within 1 income point when amounts allow; R15 sums exact)
+  + ui-static guards. 67/67 tests pass.
 - **1.11.0 (2026-11-18)** — MINOR: spinner-free numeric entry. No `type="number"` anywhere;
   every numeric field is a plain text input with `inputmode="decimal"` (money) or
   `"numeric"` (percent). Live filtering on every keystroke/paste keeps only digits and one
