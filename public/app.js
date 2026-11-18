@@ -27,18 +27,19 @@ const I18N = {
     variableShared: 'Variable shared costs',
     label: 'Name',
     amount: 'Amount',
-    partnerShare: 'Partner %',
+    partnerShare: '{name} chips in',
     add: 'Add',
     remove: 'Remove',
     save: 'Save',
     saved: "Saved.",
     saving: "Saving…",
-    transferAfterPayday: 'Transfer after payday',
-    guaranteedLeft: 'Guaranteed leftover',
-    plannedLeft: 'Planned leftover',
-    projectedLeft: 'Projected leftover',
-    potBalance: 'Pot balance',
-    settleUp: 'Settle-up',
+    transferAfterPayday: 'Contribution to shared costs',
+    guaranteedLeft: 'For sure',
+    plannedLeft: 'After plan',
+    projectedLeft: 'So far',
+    potBalance: 'Left of shared plan',
+    settleUp: 'Between you two',
+    settleLine: 'This month {from} pays {to} {amount}.',
     unplanned: 'Unplanned',
     planned: 'Planned',
     actual: 'Actual',
@@ -90,14 +91,11 @@ const I18N = {
     navPanels: 'Panels',
     personalExpensesAria: 'Personal expenses list',
     centerAria: 'Month plan and spending',
-    splitOfPlan: 'Who pays how much of the shared costs',
+    splitOfPlan: '% of shared costs',
     ofPlan: "of shared costs",
-    coversSpending: 'Who covers spending so far',
-    ofIncome: 'of own salary',
+    coversSpending: 'Paid so far, by whom',
+    ofIncome: '% of own salary',
     fairIncome: "Fair share = equal % of own salary — both pay {pct}%",
-    tipSplit: "Default: split by salary. A custom % set on an item overrides it for that item. The bar shows the result — each side's share of the shared costs, never of the pot.",
-    tipCoverage: "Of the money spent so far: who fronted it personally vs what the pot paid.",
-    tipIncome: "Fair share means both partners spend the same % of their own salary on shared costs.",
     splitLabel: 'Split',
     splitHint: 'Split this cost between {a} and {b} — blank = automatic split by salary.',
     auto: 'auto',
@@ -119,6 +117,65 @@ const I18N = {
     err_not_closed: 'The leftover log is for closed months.',
     err_not_most_recent: 'Only the most recently closed month is editable.',
     err_internal: 'Something went wrong on the server.',
+    /* tooltips: one tip<Key> per visible label key (guarded by tests/ui-static.test.js) */
+    tipSalaries: 'What each partner earns this month (net). Salaries set the default split of shared costs: the higher the salary, the bigger the share.',
+    tipSalaryFor: 'Net salary of {name} for this month. It drives the automatic split of shared costs.',
+    tipFixedShared: 'Shared costs that stay the same every month — rent, utilities, internet. They are assumed paid automatically as part of the shared plan.',
+    tipVariableShared: 'Shared costs that vary — groceries, eating out. Plan an estimate here; actual spending is logged as expenses below.',
+    tipPersonalObligatory: 'Personal expenses of this partner. They reduce only their own leftover; the other partner can chip in a % per item.',
+    tipMonthPlan: 'Everything planned for this month: salaries, shared costs, personal costs. Every edit saves automatically.',
+    tipLiveFigures: 'The money picture of this month, recomputed live while you edit the plan or log expenses.',
+    tipSpendingLog: 'Every expense logged this month. Link it to a planned item or leave it unplanned, and pick who paid.',
+    tipLabel: 'Name of this item.',
+    tipAmount: 'Amount in the app currency, e.g. 120.50. Type digits and one decimal separator.',
+    tipPartnerShare: '{name} chips in this % of this personal cost. It appears as its own line in the month summary and never changes the shared split.',
+    tipSplitLabel: 'Split this one cost between {a} and {b}. Each % is that person’s part of this one cost. Blank = automatic split by salary; the two inputs stay in sync to 100%.',
+    tipDate: 'Date of the expense — must be a real day within the current month.',
+    tipCategory: 'Category of the expense, from the list managed in Settings.',
+    tipDescription: 'What the expense was for.',
+    tipLinkItem: 'Which planned variable item this expense belongs to, or unplanned.',
+    tipPayer: 'Who actually paid: a partner (fronted personally, settled at close) or the shared plan (no individual payer).',
+    tipProfile: 'Which partner this leftover entry belongs to.',
+    tipNote: 'Free-text note for this entry.',
+    tipCurrency: 'Three-letter currency code used for all amounts, e.g. EUR or PLN.',
+    tipLanguage: 'Language of the app interface.',
+    tipCategories: 'Categories used for expenses and leftover entries. The list is editable here.',
+    tipThemeColors: 'Color theme preset for your profile only — the other partner has their own.',
+    tipMode: 'Light or dark mode for your profile only.',
+    tipSectionProfile: 'Name, theme and mode are saved per partner profile. Only your own profile is editable here.',
+    tipSectionApp: 'Settings shared by the whole app: currency, language, expense categories.',
+    tipSettings: 'App and profile settings, with one Save button at the bottom.',
+    tipHistory: 'Closed months, newest first, read-only.',
+    tipLeftoverLog: 'What each partner did with their leftover money after the most recently closed month.',
+    tipCloseMonth: 'Freezes this month forever: the plan and expenses lock and a summary snapshot is stored. This cannot be undone.',
+    tipNewMonth: 'Creates the next free month, pre-filled with editable defaults from the most recent month. Nothing else carries over.',
+    tipCreateMonth: 'Creates the current month so you can start planning.',
+    tipNoMonthTitle: 'No month is open. Months are calendar months and at most one is open at a time.',
+    tipNoMonthText: 'Create the current month to start planning; it pre-fills editable defaults from the most recent month.',
+    tipNoItems: 'Nothing here yet — use the Add button to create an item.',
+    tipNoExpenses: 'No expenses logged yet — use the form above.',
+    tipNothingYet: 'Nothing logged here yet.',
+    tipHistoryEmpty: 'Closed months appear here after you close them.',
+    tipNoLeftoverMonth: 'The leftover log opens after the first month is closed.',
+    tipOpen: 'This month is open — the plan and expenses are editable.',
+    tipClosed: 'This month is closed — read-only, except the leftover log of the most recent closed month.',
+    tipBalance: 'Net amount to settle between the two partners from personally fronted expenses: who pays whom at close.',
+    tipTransferAfterPayday: 'The amount {name} contributes to shared costs this month — the salary-based share of the whole shared plan, unless an item has a custom split.',
+    tipGuaranteedLeft: 'Money {name} has left no matter what: salary minus fixed-cost share minus personal costs.',
+    tipPlannedLeft: 'Guaranteed leftover minus the planned share of variable shared costs.',
+    tipProjectedLeft: 'Leftover if spending stays as logged so far: salary minus fixed share minus actual expenses minus personal costs.',
+    tipPotBalance: 'What remains of the shared plan after fixed costs (assumed auto-paid) and plan-paid expenses. At close it is returned to each partner by salary share.',
+    tipSettleUp: 'Who pays whom this month, so that expenses fronted personally end up split by salary share.',
+    tipOfIncome: 'Contribution as a % of own salary. When both percentages are equal, the split is fair.',
+    tipSplitOfPlan: 'Planned split of the shared costs: each side’s % of the shared plan — by salary, or a custom % set on an item. This measures the plan, not who paid.',
+    tipCoversSpending: 'Of the money actually spent so far: how much each partner fronted personally vs how much was paid from the shared plan. This measures real payments, unlike the plan bar above.',
+    tipFairIncome: 'Fair means both partners contribute the same % of their own salary to shared costs.',
+    tipEditHint: 'The leftover log is editable only for the most recently closed month.',
+    tipReadOnly: 'Older closed months are read-only.',
+    tipMonthClosed: 'Closed months are read-only.',
+    tipContributions: 'How much each partner contributes to shared costs this month.',
+    tipPaid: 'How much each partner paid out of their own pocket for shared expenses (fronted). Settled at close.',
+    tipWhoAreYou: 'Pick your profile — it only prefills forms and applies your theme. Both partners can edit everything.',
   },
   pl: {
     profileLabel: 'Aktualny profil',
@@ -144,18 +201,19 @@ const I18N = {
     variableShared: 'Zmienne koszty wsp\u00f3lne',
     label: 'Nazwa',
     amount: 'Kwota',
-    partnerShare: 'Udzia\u0142 partnera (%)',
+    partnerShare: 'Dok\u0142ada {name}',
     add: 'Dodaj',
     remove: 'Usu\u0144',
     save: 'Zapisz',
     saved: 'Zapisano.',
     saving: "Zapisywanie…",
-    transferAfterPayday: 'Przelew po wyp\u0142acie',
-    guaranteedLeft: 'Wolne \u015brodki \u2014 gwarantowane',
-    plannedLeft: 'Wolne \u015brodki \u2014 planowane',
-    projectedLeft: 'Wolne \u015brodki \u2014 prognozowane',
-    potBalance: 'Stan puli',
-    settleUp: 'Rozliczenie',
+    transferAfterPayday: 'Udzia\u0142 we wsp\u00f3lnych wydatkach',
+    guaranteedLeft: 'Na pewno',
+    plannedLeft: 'Po planie',
+    projectedLeft: 'Dot\u0105d',
+    potBalance: 'Pozosta\u0142o z planu',
+    settleUp: 'Mi\u0119dzy wami',
+    settleLine: 'W tym miesi\u0105cu {from} p\u0142aci {to} {amount}.',
     unplanned: 'Pozaplanowe',
     planned: 'Planowane',
     actual: 'Rzeczywiste',
@@ -207,14 +265,11 @@ const I18N = {
     navPanels: "Panele",
     personalExpensesAria: "Lista wydatków osobistych",
     centerAria: "Plan miesiąca i wydatki",
-    splitOfPlan: 'Kto ile płaci za wspólne koszty',
+    splitOfPlan: '% wspólnych kosztów',
     ofPlan: "kosztów wspólnych",
-    coversSpending: 'Kto pokrywa wydatki do tej pory',
-    ofIncome: 'z własnej pensji',
+    coversSpending: 'Kto już zapłacił',
+    ofIncome: '% własnej pensji',
     fairIncome: "Uczciwy podział = równy % pensji — obie strony płacą po {pct}%",
-    tipSplit: "Domyślnie: podział wg pensji. Własny % przy pozycji nadpisuje go dla tej pozycji. Pasek pokazuje wynik — udział w kosztach wspólnych, nigdy w puli.",
-    tipCoverage: "Spośród już wydanych pieniędzy: kto zapłacił z własnej kieszeni, a co pokryła pula.",
-    tipIncome: 'Uczciwy podział oznacza, że obie osoby przeznaczają taki sam % własnej pensji na koszty wspólne.',
     splitLabel: 'Podział',
     splitHint: 'Podziel ten koszt między {a} a {b} — puste = automatyczny podział wg pensji.',
     auto: 'auto',
@@ -236,6 +291,65 @@ const I18N = {
     err_not_closed: 'Dziennik wolnych środków dotyczy zamkniętych miesięcy.',
     err_not_most_recent: 'Edytować można tylko ostatnio zamknięty miesiąc.',
     err_internal: 'Coś poszło nie tak po stronie serwera.',
+    /* podpowiedzi: jeden klucz tip<Key> na każdy widoczny klucz etykiety (pilnowane testem) */
+    tipSalaries: 'Ile każda osoba zarabia w tym miesiącu (netto). Pensje wyznaczają domyślny podział kosztów wspólnych: im wyższa pensja, tym większy udział.',
+    tipSalaryFor: 'Pensja netto: {name} w tym miesiącu. To ona wyznacza automatyczny podział kosztów wspólnych.',
+    tipFixedShared: 'Wspólne koszty stałe co miesiąc — czynsz, prąd, internet. Są uznawane za opłacone automatycznie w ramach planu wspólnego.',
+    tipVariableShared: 'Wspólne koszty zmienne — zakupy, jedzenie na mieście. Zaplanuj tu szacunek; rzeczywiste wydatki rejestrujesz poniżej.',
+    tipPersonalObligatory: 'Wydatki osobiste tej osoby. Obniżają tylko jej własne wolne środki; druga osoba może dołożyć się procentem od pozycji.',
+    tipMonthPlan: 'Wszystko zaplanowane na ten miesiąc: pensje, koszty wspólne, osobiste. Każda zmiana zapisuje się automatycznie.',
+    tipLiveFigures: 'Obraz pieniędzy na ten miesiąc — przeliczany na bieżąco podczas edycji planu i rejestrowania wydatków.',
+    tipSpendingLog: 'Każdy wydatek zarejestrowany w tym miesiącu. Powiąż go z zaplanowaną pozycją albo zostaw pozaplanowy i wybierz, kto zapłacił.',
+    tipLabel: 'Nazwa tej pozycji.',
+    tipAmount: 'Kwota w walucie aplikacji, np. 120,50. Wpisuj cyfry i jeden przecinek lub kropkę.',
+    tipPartnerShare: '{name} dokłada ten % tej osobistej pozycji. Pokazuje się jako osobna linia w podsumowaniu miesiąca i nigdy nie zmienia podziału wspólnego.',
+    tipSplitLabel: 'Podziel ten jeden koszt między {a} a {b}. Każdy % to część tej jednej osoby za ten jeden koszt. Puste = automatyczny podział wg pensji; oba pola sumują się do 100%.',
+    tipDate: 'Data wydatku — musi to być prawdziwy dzień bieżącego miesiąca.',
+    tipCategory: 'Kategoria wydatku z listy zarządzanej w Ustawieniach.',
+    tipDescription: 'Na co był ten wydatek.',
+    tipLinkItem: 'Do której zaplanowanej pozycji zmiennej należy ten wydatek — albo pozaplanowy.',
+    tipPayer: 'Kto faktycznie zapłacił: osoba (zapłacone z własnej kieszeni, rozliczane przy zamknięciu) albo plan wspólny (bez indywidualnego płatnika).',
+    tipProfile: 'Której osoby dotyczy ten wpis dziennika wolnych środków.',
+    tipNote: 'Dowolna notatka do tego wpisu.',
+    tipCurrency: 'Trzyliterowy kod waluty dla wszystkich kwot, np. EUR albo PLN.',
+    tipLanguage: 'Język interfejsu aplikacji.',
+    tipCategories: 'Kategorie używane przy wydatkach i wpisach dziennika. Lista jest edytowalna tutaj.',
+    tipThemeColors: 'Wariant kolorystyczny tylko dla Twojego profilu — druga osoba ma własny.',
+    tipMode: 'Tryb jasny lub ciemny tylko dla Twojego profilu.',
+    tipSectionProfile: 'Nazwa, motyw i tryb są zapisywane osobno dla każdego profilu. Tutaj edytujesz tylko własny.',
+    tipSectionApp: 'Ustawienia wspólne dla całej aplikacji: waluta, język, kategorie wydatków.',
+    tipSettings: 'Ustawienia aplikacji i profilu — jednym przyciskiem Zapisz na dole.',
+    tipHistory: 'Zamknięte miesiące, najnowsze pierwsze, tylko do odczytu.',
+    tipLeftoverLog: 'Co każda osoba zrobiła ze swoimi wolnymi środkami po ostatnio zamkniętym miesiącu.',
+    tipCloseMonth: 'Zamyka ten miesiąc na zawsze: plan i wydatki zostają zablokowane, a podsumowanie zapisane jako migawka. Nie można tego cofnąć.',
+    tipNewMonth: 'Tworzy następny wolny miesiąc, wstępnie wypełniony edytowalnymi wartościami z ostatniego miesiąca. Nic innego nie przechodzi.',
+    tipCreateMonth: 'Tworzy bieżący miesiąc, żeby zacząć planowanie.',
+    tipNoMonthTitle: 'Nie ma otwartego miesiąca. Miesiące to miesiące kalendarzowe; otwarty może być najwyżej jeden.',
+    tipNoMonthText: 'Utwórz bieżący miesiąc, żeby zacząć planować — wypełni się edytowalnymi domyślnymi wartościami z ostatniego miesiąca.',
+    tipNoItems: 'Jeszcze nic tu nie ma — użyj przycisku Dodaj, żeby utworzyć pozycję.',
+    tipNoExpenses: 'Nie zarejestrowano jeszcze żadnych wydatków — użyj formularza powyżej.',
+    tipNothingYet: 'Jeszcze nic tu nie zapisano.',
+    tipHistoryEmpty: 'Zamknięte miesiące pojawią się tutaj po ich zamknięciu.',
+    tipNoLeftoverMonth: 'Dziennik wolnych środków otworzy się po pierwszym zamkniętym miesiącu.',
+    tipOpen: 'Ten miesiąc jest otwarty — plan i wydatki można edytować.',
+    tipClosed: 'Ten miesiąc jest zamknięty — tylko do odczytu, poza dziennikiem ostatnio zamkniętego miesiąca.',
+    tipBalance: 'Kwota netto do rozliczenia między osobami za wydatki zapłacone osobiście: kto komu płaci przy zamknięciu.',
+    tipTransferAfterPayday: 'Kwota, którą {name} dokłada się do wspólnych kosztów w tym miesiącu — udział wg pensji w całym planie wspólnym, chyba że pozycja ma własny podział.',
+    tipGuaranteedLeft: 'Pieniądze, które {name} zostają w każdym razie: pensja minus udział w kosztach stałych minus wydatki osobiste.',
+    tipPlannedLeft: 'Wolne środki „na pewno” minus zaplanowany udział w zmiennych kosztach wspólnych.',
+    tipProjectedLeft: 'Wolne środki, jeśli wydatki zostaną takie jak zarejestrowane: pensja minus udział w stałych minus rzeczywiste wydatki minus osobiste.',
+    tipPotBalance: 'Ile zostało z planu wspólnego po kosztach stałych (zakładamy, że opłacone automatycznie) i wydatkach opłaconych z planu. Przy zamknięciu wraca do każdej osoby wg udziału pensji.',
+    tipSettleUp: 'Kto komu płaci w tym miesiącu, żeby wydatki zapłacone osobiście skończyły się podzielone wg pensji.',
+    tipOfIncome: 'Udział w kosztach jako % własnej pensji. Gdy oba procenty są równe, podział jest uczciwy.',
+    tipSplitOfPlan: 'Zaplanowany podział kosztów wspólnych: procent każdej strony w planie wspólnym — wg pensji albo własny % przy pozycji. Mierzy plan, nie to, kto zapłacił.',
+    tipCoversSpending: 'Spośród pieniędzy faktycznie wydanych do tej pory: ile każda osoba zapłaciła osobiście, a ile opłacił plan wspólny. Mierzy faktyczne płatności, w przeciwieństwie do paska planu wyżej.',
+    tipFairIncome: 'Uczciwie znaczy, że obie osoby przeznaczają taki sam % własnej pensji na koszty wspólne.',
+    tipEditHint: 'Dziennik wolnych środków można edytować tylko w ostatnio zamkniętym miesiącu.',
+    tipReadOnly: 'Starsze zamknięte miesiące są tylko do odczytu.',
+    tipMonthClosed: 'Zamknięte miesiące są tylko do odczytu.',
+    tipContributions: 'Ile każda osoba dokłada się do wspólnych kosztów w tym miesiącu.',
+    tipPaid: 'Ile każda osoba zapłaciła z własnej kieszeni za wspólne wydatki. Rozliczane przy zamknięciu.',
+    tipWhoAreYou: 'Wybierz swój profil — służy tylko do wstępnego wypełniania formularzy i motywu. Oboje możecie edytować wszystko.',
   },
 };
 
@@ -275,6 +389,95 @@ const el = (tag, attrs = {}, ...children) => {
 /* replaceChildren/append stringify raw null/false into visible text — filter them out. */
 const kids = (...nodes) => nodes.flat().filter((n) => n != null && n !== false);
 
+/* ---------- delayed tooltip ----------
+   The label text itself is the trigger: hover ~2s opens it, keyboard focus and tap open it
+   immediately, Escape / focus-out / mouse-leave dismiss it. The tooltip element carries
+   role="tooltip" and the associated field references it via aria-describedby. */
+const TIP_HOVER_MS = 2000;
+let tipSeq = 0;
+
+function initTip(trigger, tip, { toggleOnActivate = true } = {}) {
+  let hoverTimer = null;
+  let pinned = false;
+  const show = () => {
+    tip.hidden = false;
+    trigger.setAttribute('aria-expanded', 'true');
+  };
+  const hide = () => {
+    clearTimeout(hoverTimer);
+    tip.hidden = true;
+    trigger.setAttribute('aria-expanded', 'false');
+    pinned = false;
+  };
+  trigger.addEventListener('mouseenter', () => {
+    clearTimeout(hoverTimer);
+    hoverTimer = setTimeout(show, TIP_HOVER_MS);
+  });
+  trigger.addEventListener('mouseleave', () => {
+    clearTimeout(hoverTimer);
+    if (!pinned && document.activeElement !== trigger) hide();
+  });
+  trigger.addEventListener('focus', () => {
+    clearTimeout(hoverTimer);
+    show();
+  });
+  trigger.addEventListener('blur', () => {
+    if (!pinned) hide();
+  });
+  if (toggleOnActivate) {
+    trigger.addEventListener('click', () => {
+      pinned = !pinned;
+      if (pinned) show();
+      else hide();
+    });
+  }
+  trigger.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      hide();
+      e.stopPropagation();
+    }
+  });
+  return { show, hide };
+}
+
+/* Label text as a tooltip trigger; returns { node, tipId }. */
+function tipWrap(labelKey, tipKey, params) {
+  const tipId = `tip-${++tipSeq}`;
+  const tip = el('span', { class: 'tooltip', id: tipId, role: 'tooltip', text: t(tipKey, params), hidden: true });
+  const trigger = el('span', {
+    class: 'tip-trigger',
+    tabindex: '0',
+    text: t(labelKey, params),
+    'aria-expanded': 'false',
+    'aria-describedby': tipId,
+  });
+  initTip(trigger, tip);
+  return { node: el('span', { class: 'tip-wrap' }, trigger, tip), tipId };
+}
+
+/* Re-localize the tooltip text of an attachTip() target after a language switch. */
+function refreshTipText(target) {
+  const tip = target.querySelector(':scope > .tooltip');
+  if (tip && target.dataset.tipKey) tip.textContent = t(target.dataset.tipKey);
+}
+
+/* Attach a tooltip to an existing element (button, badge, select): hover/focus only,
+   the element's own click keeps its action. */
+function attachTip(target, tipKey, params) {
+  const tipId = `tip-${++tipSeq}`;
+  const tip = el('span', { class: 'tooltip', id: tipId, role: 'tooltip', text: t(tipKey, params), hidden: true });
+  if (!target.hasAttribute('tabindex') && target.tagName !== 'BUTTON' && target.tagName !== 'SELECT' && target.tagName !== 'INPUT') {
+    target.setAttribute('tabindex', '0');
+  }
+  target.setAttribute('aria-expanded', 'false');
+  target.setAttribute('aria-describedby', tipId);
+  target.classList.add('has-tip');
+  target.dataset.tipKey = tipKey;
+  initTip(target, tip, { toggleOnActivate: false });
+  target.append(tip);
+  return tipId;
+}
+
 function t(key, params) {
   let str = I18N[state.settings.language]?.[key] ?? I18N.en[key] ?? key;
   for (const [k, v] of Object.entries(params ?? {})) {
@@ -283,14 +486,22 @@ function t(key, params) {
   return str;
 }
 
+/* textContent assignment wipes children — preserve an attached tooltip element. */
+function setText(node, text) {
+  const tip = node.querySelector(':scope > .tooltip');
+  node.textContent = text;
+  if (tip) node.append(tip);
+}
+
 function applyI18n() {
   document.documentElement.lang = state.settings.language;
   for (const node of document.querySelectorAll('[data-i18n]')) {
-    node.textContent = t(node.dataset.i18n);
+    setText(node, t(node.dataset.i18n));
   }
   for (const node of document.querySelectorAll('[data-i18n-aria]')) {
     node.setAttribute('aria-label', t(node.dataset.i18nAria));
   }
+  for (const node of document.querySelectorAll('.has-tip[data-tip-key]')) refreshTipText(node);
 }
 
 let numberFormatter;
@@ -411,7 +622,9 @@ function renderHeader() {
   const month = state.month ?? state.openMonth;
   if (month) {
     status.hidden = false;
-    status.textContent = month.status === 'open' ? t('open') : t('closed');
+    setText(status, month.status === 'open' ? t('open') : t('closed'));
+    status.dataset.tipKey = month.status === 'open' ? 'tipOpen' : 'tipClosed';
+    refreshTipText(status);
   } else {
     status.hidden = true;
   }
@@ -420,7 +633,7 @@ function renderHeader() {
   const offset = settle ? Math.abs(settle.A) : 0;
   if (state.month && settle && offset !== 0) {
     balance.hidden = false;
-    balance.textContent = `${t('balance')} ${fmtMoney(offset)}`;
+    setText(balance, `${t('balance')} ${fmtMoney(offset)}`);
   } else {
     balance.hidden = true;
   }
@@ -618,20 +831,22 @@ function itemCard(item, idx, kind, owner) {
   let row2;
   if (kind === 'personal') {
     const partnerName = owner === 1 ? nameB : nameA;
+    const pctCtl = pctInput({
+      value: item.partnerSharePct >= 0 ? String(item.partnerSharePct) : '',
+      aria: t('partnerShare', { name: partnerName }),
+      side: 'partner',
+      disabled: !canEdit,
+      oninput: (e) => {
+        const v = e.target.value;
+        item.partnerSharePct = v === '' ? -1 : clampPct(v);
+        scheduleAutosave();
+      },
+    });
+    const tw = tipWrap('partnerShare', 'tipPartnerShare', { name: partnerName });
+    tw.node.classList.add('field-label');
+    pctCtl.setAttribute('aria-describedby', tw.tipId);
     row2 = el('div', { class: 'personal-row' },
-      el('label', { class: 'personal-pct' },
-        el('span', { class: 'field-label', text: `${partnerName} %` }),
-        pctInput({
-          value: item.partnerSharePct >= 0 ? String(item.partnerSharePct) : '',
-          aria: t('partnerShare'),
-          side: 'partner',
-          disabled: !canEdit,
-          oninput: (e) => {
-            const v = e.target.value;
-            item.partnerSharePct = v === '' ? -1 : clampPct(v);
-            scheduleAutosave();
-          },
-        })),
+      el('label', { class: 'personal-pct' }, tw.node, pctCtl),
       removeBtn);
   } else {
     const pct = item.partnerSharePct ?? -1;
@@ -694,8 +909,12 @@ function itemCard(item, idx, kind, owner) {
         scheduleAutosave();
       },
     });
+    const splitTip = tipWrap('splitLabel', 'tipSplitLabel', { a: nameA, b: nameB });
+    splitTip.node.classList.add('field-label');
+    aInput.setAttribute('aria-describedby', splitTip.tipId);
+    bInput.setAttribute('aria-describedby', splitTip.tipId);
     row2 = el('div', { class: 'personal-row split-row' },
-      el('span', { class: 'field-label', text: t('splitLabel') }),
+      splitTip.node,
       aInput,
       el('span', { class: 'split-sep', text: '/' }),
       bInput,
@@ -715,12 +934,12 @@ function planItemsOf(kind, owner) {
 
 function itemTable(headCells, rows, closedText, emptyText) {
   const table = el('table', {});
-  const headRow = el('tr', {}, ...headCells.map((h) => el('th', { text: h })));
+  const headRow = el('tr', {}, ...headCells.map((h) => el('th', {}, h)));
   table.append(el('thead', {}, headRow), el('tbody', {}, ...rows));
   const wrap = el('div', { class: 'table-wrap' });
   wrap.append(table);
   if (!rows.length) {
-    wrap.append(el('p', { class: 'empty-row', text: emptyText ?? t('noItems') }));
+    wrap.append(el('p', { class: 'empty-row' }, emptyText ?? tipWrap('noItems', 'tipNoItems').node));
   }
   if (closedText) {
     wrap.append(el('p', { class: 'empty-row', text: closedText }));
@@ -740,26 +959,27 @@ function addItem(kind, owner) {
   renderPersonal(2, $('#personal-list-b'));
 }
 
-function field(labelText, control) {
-  return el('label', { class: 'field' },
-    el('span', { class: 'field-label', text: labelText }),
-    control
-  );
+function field(labelKey, control, tipKey, tipParams) {
+  const tw = tipWrap(labelKey, tipKey, tipParams);
+  tw.node.classList.add('field-label');
+  if (control && control.setAttribute) control.setAttribute('aria-describedby', tw.tipId);
+  return el('label', { class: 'field' }, tw.node, control);
 }
 
 function renderPlan() {
   const canEdit = editable();
   const box = $('#plan-salaries');
   box.replaceChildren(
-    el('h3', { text: t('salaries') }),
+    el('h3', {}, tipWrap('salaries', 'tipSalaries').node),
     el('div', { class: 'form-grid' },
       ...[1, 2].map((pid) =>
-        field(t('salaryFor', { name: state.profiles.find((p) => p.id === pid)?.name ?? pid }),
-          moneyInput(state.draft.salaries[pid], (v) => { state.draft.salaries[pid] = v; scheduleAutosave(); }, { disabled: !canEdit }))
+        field('salaryFor',
+          moneyInput(state.draft.salaries[pid], (v) => { state.draft.salaries[pid] = v; scheduleAutosave(); }, { disabled: !canEdit }),
+          'tipSalaryFor', { name: state.profiles.find((p) => p.id === pid)?.name ?? pid })
       ),
       el('span', { class: 'hint save-state', id: 'plan-save-state' })
     ),
-    el('p', { class: 'hint', id: 'plan-share-hint', text: shareHint() })
+    (() => { const h = el('p', { class: 'hint', id: 'plan-share-hint', text: shareHint() }); attachTip(h, 'tipFairIncome'); return h; })()
   );
 
   const nameA = state.profiles[0]?.name ?? 'A';
@@ -768,13 +988,13 @@ function renderPlan() {
     const box = $(`#plan-${kind}`);
     const rows = planItemsOf(kind);
     box.replaceChildren(...kids(
-      el('h3', { text: kind === 'fixed' ? t('fixedShared') : t('variableShared') }),
+      el('h3', {}, tipWrap(kind === 'fixed' ? 'fixedShared' : 'variableShared', kind === 'fixed' ? 'tipFixedShared' : 'tipVariableShared').node),
       el('p', { class: 'hint', text: t('splitHint', { a: nameA, b: nameB }) }),
       ...rows.map(({ item, idx }) => itemCard(item, idx, kind)),
-      rows.length ? null : el('p', { class: 'empty-row', text: t('noItems') }),
+      rows.length ? null : el('p', { class: 'empty-row' }, tipWrap('noItems', 'tipNoItems').node),
       canEdit
         ? el('button', { type: 'button', class: 'btn', text: t('add'), onclick: () => addItem(kind) })
-        : el('p', { class: 'hint', text: t('monthClosed') })
+        : el('p', { class: 'hint' }, tipWrap('monthClosed', 'tipMonthClosed').node)
     ));
   }
 }
@@ -852,8 +1072,8 @@ function renderPersonal(owner, box) {
   const rows = planItemsOf('personal', owner);
   box.replaceChildren(...kids(
     ...rows.map(({ item, idx }) => itemCard(item, idx, 'personal', owner)),
-    rows.length ? null : el('p', { class: 'empty-row', text: t('noItems') }),
-    !canEdit && state.month ? el('p', { class: 'empty-row', text: t('monthClosed') }) : null,
+    rows.length ? null : el('p', { class: 'empty-row' }, tipWrap('noItems', 'tipNoItems').node),
+    !canEdit && state.month ? el('p', { class: 'empty-row' }, tipWrap('monthClosed', 'tipMonthClosed').node) : null,
     canEdit
       ? el('button', { type: 'button', class: 'btn', text: t('add'), onclick: () => addItem('personal', owner) })
       : null
@@ -862,11 +1082,11 @@ function renderPersonal(owner, box) {
 
 /* ---------- live figures (US3) ---------- */
 
-function fig(caption, value) {
-  return el('figure', { class: 'fig' },
-    el('figcaption', { text: caption }),
-    el('span', { class: 'money', text: value })
-  );
+function fig(captionKey, value, tipKey, tipParams) {
+  const tw = tipWrap(captionKey, tipKey, tipParams);
+  const val = el('span', { class: 'money', text: value });
+  val.setAttribute('aria-describedby', tw.tipId);
+  return el('figure', { class: 'fig' }, el('figcaption', {}, tw.node), val);
 }
 
 function pct(part, whole) {
@@ -893,11 +1113,12 @@ function legendItem(cls, text) {
   return el('span', { class: 'legend-item' }, el('i', { class: `dot ${cls}`, 'aria-hidden': 'true' }), text);
 }
 
-function figRow(label, value) {
-  return el('div', { class: 'fig-row' },
-    el('span', { class: 'fig-label', text: label }),
-    el('span', { class: 'money', text: value })
-  );
+function figRow(labelKey, value, tipKey, tipParams) {
+  const tw = tipWrap(labelKey, tipKey, tipParams);
+  tw.node.classList.add('fig-label');
+  const val = el('span', { class: 'money', text: value });
+  val.setAttribute('aria-describedby', tw.tipId);
+  return el('div', { class: 'fig-row' }, tw.node, val);
 }
 
 function shareHint() {
@@ -910,17 +1131,11 @@ function shareHint() {
   const iA = s.salaries.A > 0 ? pct(s.contributions.A, s.salaries.A) : null;
   const iB = s.salaries.B > 0 ? pct(s.contributions.B, s.salaries.B) : null;
   const fair = iA != null && iB != null && Math.abs(iA - iB) < 0.05;
-  return `${nameA} ${cA}% · ${nameB} ${cB}% ${t('ofPlan')} — ${fair && iA != null ? t('fairIncome', { pct: iA }) : `${nameA} ${pctStr(iA)} · ${nameB} ${pctStr(iB)} ${t('ofIncome')}`}`;
+  return `${nameA} ${cA}% · ${nameB} ${cB}% ${t('ofPlan')} — ${fair && iA != null ? t('fairIncome', { pct: iA }) : `${nameA} ${pctStr(iA)} · ${nameB} ${pctStr(iB)}`}`;
 }
 
 function pctStr(v) {
   return v == null ? t('none') : `${v}%`;
-}
-
-function infoTip(text) {
-  return el('span', { class: 'info-tip', tabindex: '0' },
-    el('i', { class: 'info-icon', 'aria-hidden': 'true', text: 'i' }),
-    el('span', { class: 'tip', role: 'note', text }));
 }
 
 function renderFigures() {
@@ -934,17 +1149,16 @@ function renderFigures() {
   const iA = s.salaries.A > 0 ? pct(s.contributions.A, s.salaries.A) : null;
   const iB = s.salaries.B > 0 ? pct(s.contributions.B, s.salaries.B) : null;
   const fair = iA != null && iB != null && Math.abs(iA - iB) < 0.05;
+  const fairHint = el('p', { class: 'hint', text: fair && iA != null ? t('fairIncome', { pct: iA }) : `${names.A} ${pctStr(iA)} · ${names.B} ${pctStr(iB)}` });
+  attachTip(fairHint, 'tipFairIncome');
   const planBlock = el('div', { class: 'split-block' },
     el('div', { class: 'block-head' },
-      el('h3', { text: t('splitOfPlan') }),
-      infoTip(t('tipSplit'))),
+      el('h3', {}, tipWrap('splitOfPlan', 'tipSplitOfPlan').node)),
     splitBar([['seg-a', cA], ['seg-b', cB]], `${names.A} ${cA}%, ${names.B} ${cB}%`),
     el('p', { class: 'split-legend' },
       legendItem('seg-a', `${names.A} — ${cA}%`),
       legendItem('seg-b', `${names.B} — ${cB}%`)),
-    el('div', { class: 'block-head' },
-      el('p', { class: 'hint', text: fair && iA != null ? t('fairIncome', { pct: iA }) : `${names.A} ${pctStr(iA)} · ${names.B} ${pctStr(iB)} ${t('ofIncome')}` }),
-      infoTip(t('tipIncome')))
+    el('div', { class: 'block-head' }, fairHint)
   );
 
   const potPaid = s.actualSpent - s.fronted.A - s.fronted.B;
@@ -953,8 +1167,8 @@ function renderFigures() {
   const fPot = pct(potPaid, s.actualSpent);
   const covBlock = el('div', { class: 'split-block' },
     el('div', { class: 'block-head' },
-      el('h3', { text: `${t('coversSpending')} — ${fmtMoney(s.actualSpent)}` }),
-      infoTip(t('tipCoverage'))),
+      el('h3', {}, tipWrap('coversSpending', 'tipCoversSpending').node),
+      el('span', { class: 'money', text: fmtMoney(s.actualSpent) })),
     splitBar([['seg-a', fA], ['seg-b', fB], ['seg-pot', fPot]], `${names.A} ${fA}%, ${names.B} ${fB}%, ${t('pot')} ${fPot}%`),
     el('p', { class: 'split-legend' },
       legendItem('seg-a', `${names.A} ${fA}%`),
@@ -966,26 +1180,26 @@ function renderFigures() {
     ...['A', 'B'].map((p) =>
       el('section', { class: 'partner-col' },
         el('h3', { class: p === 'A' ? 'who-a' : 'who-b', text: `${names[p]} — ${p === 'A' ? cA : cB}% ${t('ofPlan')}` }),
-        figRow(t('transferAfterPayday'), fmtMoney(s.contributions[p])),
-        figRow(t('ofIncome'), pctStr(p === 'A' ? iA : iB)),
-        figRow(t('guaranteedLeft'), fmtMoney(s.guaranteedLeft[p])),
-        figRow(t('plannedLeft'), fmtMoney(s.plannedLeft[p])),
-        figRow(t('projectedLeft'), fmtMoney(s.projectedLeft[p]))
+        figRow('transferAfterPayday', fmtMoney(s.contributions[p]), 'tipTransferAfterPayday', { name: names[p] }),
+        figRow('ofIncome', pctStr(p === 'A' ? iA : iB), 'tipOfIncome', { name: names[p] }),
+        figRow('guaranteedLeft', fmtMoney(s.guaranteedLeft[p]), 'tipGuaranteedLeft', { name: names[p] }),
+        figRow('plannedLeft', fmtMoney(s.plannedLeft[p]), 'tipPlannedLeft', { name: names[p] }),
+        figRow('projectedLeft', fmtMoney(s.projectedLeft[p]), 'tipProjectedLeft', { name: names[p] })
       )
     )
   );
 
-  let settleLine = figRow(t('settleUp'), t('none'));
+  let settleLine = figRow('settleUp', t('none'), 'tipSettleUp');
   if (s.settle && (s.settle.A !== 0 || s.settle.B !== 0)) {
     const [p, other] = s.settle.A > 0 ? ['A', 'B'] : ['B', 'A'];
-    settleLine = el('p', { class: 'settle', text: `${t('settleUp')}: ${names[other]} → ${names[p]} ${fmtMoney(Math.abs(s.settle[p]))}` });
+    settleLine = figRow('settleUp', t('settleLine', { from: names[other], to: names[p], amount: fmtMoney(Math.abs(s.settle[p])) }), 'tipSettleUp');
   }
   box.append(
     planBlock,
     covBlock,
     cols,
     el('div', { class: 'split-block' },
-      figRow(t('potBalance'), fmtMoney(s.potBalance)),
+      figRow('potBalance', fmtMoney(s.potBalance), 'tipPotBalance'),
       settleLine
     )
   );
@@ -1057,12 +1271,12 @@ function renderExpenses() {
     };
     form.append(
       el('div', { class: 'form-grid' },
-        field(t('date'), dateInput),
-        field(t('category'), categorySelect),
-        field(t('description'), descInput),
-        field(t('amount'), amountInput),
-        field(t('linkItem'), itemSelect),
-        field(t('payer'), payerSelect),
+        field('date', dateInput, 'tipDate'),
+        field('category', categorySelect, 'tipCategory'),
+        field('description', descInput, 'tipDescription'),
+        field('amount', amountInput, 'tipAmount'),
+        field('linkItem', itemSelect, 'tipLinkItem'),
+        field('payer', payerSelect, 'tipPayer'),
         el('button', {
           type: 'button',
           class: 'btn btn-primary',
@@ -1137,7 +1351,7 @@ function renderExpenses() {
               : null
           ))
         );
-      }), null, t('noExpenses')
+      }), null, tipWrap('noExpenses', 'tipNoExpenses').node
     ),
     el('h3', { text: `${t('planned')} / ${t('actual')}` }),
     itemTable(
@@ -1178,17 +1392,18 @@ function renderSummaryBody(box, snapshot, month) {
     ));
   }
   const parts = [
-    el('h3', { text: `${month.ym} — ${t('contributions')}` }),
+    el('h3', {}, tipWrap('contributions', 'tipContributions').node, ` — ${month.ym}`),
     itemTable(
-      [t('label'), t('contributions'), t('paid'), t('guaranteedLeft'), t('plannedLeft'), t('projectedLeft')],
+      [tipWrap('label', 'tipLabel').node, tipWrap('contributions', 'tipContributions').node, tipWrap('paid', 'tipPaid').node,
+       tipWrap('guaranteedLeft', 'tipGuaranteedLeft').node, tipWrap('plannedLeft', 'tipPlannedLeft').node, tipWrap('projectedLeft', 'tipProjectedLeft').node],
       rows
     ),
-    fig(t('potBalance'), fmtMoney(snapshot.potBalance)),
+    fig('potBalance', fmtMoney(snapshot.potBalance), 'tipPotBalance'),
   ];
   if (snapshot.settle && (snapshot.settle.A !== 0 || snapshot.settle.B !== 0)) {
     const [p, other] = snapshot.settle.A > 0 ? ['A', 'B'] : ['B', 'A'];
     parts.push(el('p', { class: 'settle' },
-      `${t('settleUp')}: ${names[other]} → ${names[p]} ${fmtMoney(Math.abs(snapshot.settle[p]))}`));
+      t('settleLine', { from: names[other], to: names[p], amount: fmtMoney(Math.abs(snapshot.settle[p])) })));
   }
   if (snapshot.personalSupport.length) {
     parts.push(el('h3', { text: t('personalSupport') }));
@@ -1300,12 +1515,12 @@ function renderSettings() {
   });
   box.append(
     el('section', { class: 'settings-section' },
-      el('h3', { text: t('sectionProfile') }),
+      el('h3', {}, tipWrap('sectionProfile', 'tipSectionProfile').node),
       el('p', { class: 'hint', text: t('profileHint') }),
-      field(t('label'), nameInput),
-      el('p', { class: 'field-label', text: t('themeColors') }),
+      field('label', nameInput, 'tipLabel'),
+      (() => { const p = el('p', { class: 'field-label', text: t('themeColors') }); attachTip(p, 'tipThemeColors'); return p; })(),
       presetGrid,
-      field(t('mode'), modeGroup),
+      field('mode', modeGroup, 'tipMode'),
       el('div', { class: 'form-grid' },
         el('button', {
           type: 'button',
@@ -1332,7 +1547,7 @@ function renderSettings() {
       ...state.settings.categories.map((cat, idx) =>
         el('div', { class: 'form-grid cat-row' },
           el('span', { class: 'cat-dot', style: `background:${colorForCategory(cat)}`, 'aria-hidden': 'true' }),
-          field(t('label'), textInput(cat, (v) => { state.settings.categories[idx] = v; settingsDirty = true; })),
+          field('label', textInput(cat, (v) => { state.settings.categories[idx] = v; settingsDirty = true; }), 'tipLabel'),
           el('button', {
             type: 'button',
             class: 'btn btn-danger',
@@ -1360,14 +1575,14 @@ function renderSettings() {
   renderCats();
   box.append(
     el('section', { class: 'settings-section' },
-      el('h3', { text: t('sectionApp') }),
+      el('h3', {}, tipWrap('sectionApp', 'tipSectionApp').node),
       el('div', { class: 'form-grid' },
-        field(t('currency'), currencyInput),
-        field(t('language'), langGroup)
+        field('currency', currencyInput, 'tipCurrency'),
+        field('language', langGroup, 'tipLanguage')
       )
     ),
     el('section', { class: 'settings-section' },
-      el('h3', { text: t('categories') }),
+      el('h3', {}, tipWrap('categories', 'tipCategories').node),
       catBox
     ),
     el('div', { class: 'form-grid settings-save' },
@@ -1406,7 +1621,7 @@ async function renderLeftovers(historyData) {
   const box = $('#leftovers-body');
   const ym = state.mostRecentClosedYm;
   if (!ym) {
-    box.replaceChildren(el('p', { class: 'hint', text: t('noLeftoverMonth') }));
+    box.replaceChildren(el('p', { class: 'hint' }, tipWrap('noLeftoverMonth', 'tipNoLeftoverMonth').node));
     return;
   }
   let data = historyData;
@@ -1427,14 +1642,15 @@ async function renderLeftovers(historyData) {
   const categorySelect = el('select', {},
     ...state.settings.categories.map((c) => el('option', { value: c, text: c }))
   );
+  const loHint = el('p', { class: 'hint' }, `${ym} — `, tipWrap(editableMonth ? 'editHint' : 'readOnly', editableMonth ? 'tipEditHint' : 'tipReadOnly').node);
   box.replaceChildren(...kids(
-    el('p', { class: 'hint', text: `${ym} — ${editableMonth ? t('editHint') : t('readOnly')}` }),
+    loHint,
     editableMonth
       ? el('div', { class: 'form-grid' },
-          field(t('profile'), profileSelect),
-          field(t('amount'), amountInput),
-          field(t('category'), categorySelect),
-          field(t('note'), noteInput),
+          field('profile', profileSelect, 'tipProfile'),
+          field('amount', amountInput, 'tipAmount'),
+          field('category', categorySelect, 'tipCategory'),
+          field('note', noteInput, 'tipNote'),
           el('button', {
             type: 'button',
             class: 'btn btn-primary',
@@ -1482,7 +1698,7 @@ async function renderLeftovers(historyData) {
           )
         )
       )
-    ), null, t('nothingYet'))
+    ), null, tipWrap('nothingYet', 'tipNothingYet').node)
   );
 }
 
@@ -1492,7 +1708,7 @@ async function renderHistory() {
   const box = $('#history-body');
   const closed = state.months.filter((m) => m.status === 'closed');
   if (!closed.length) {
-    box.replaceChildren(el('p', { class: 'hint', text: t('historyEmpty') }));
+    box.replaceChildren(el('p', { class: 'hint' }, tipWrap('historyEmpty', 'tipHistoryEmpty').node));
     return;
   }
   box.replaceChildren();
@@ -1517,7 +1733,30 @@ function showErrorMessage(err) {
   notify('error', `${t('error')}: ${err.message}`);
 }
 
+/* Tooltips on the static chrome (header buttons, badges, section titles, empty state). */
+function attachChromeTips() {
+  const byId = {
+    'btn-settings': 'tipSettings',
+    'btn-history': 'tipHistory',
+    'btn-leftovers': 'tipLeftoverLog',
+    'btn-new-month': 'tipNewMonth',
+    'btn-close-month': 'tipCloseMonth',
+    'btn-create-month': 'tipCreateMonth',
+    'month-status': 'tipOpen',
+    'balance-badge': 'tipBalance',
+  };
+  for (const [id, tipKey] of Object.entries(byId)) {
+    const n = document.getElementById(id);
+    if (n && !n.classList.contains('has-tip')) attachTip(n, tipKey);
+  }
+  for (const key of ['monthPlan', 'liveFigures', 'spendingLog', 'personalObligatory', 'noMonthTitle', 'noMonthText', 'whoAreYou']) {
+    const n = document.querySelector(`[data-i18n="${key}"]`);
+    if (n && !n.classList.contains('has-tip')) attachTip(n, `tip${key[0].toUpperCase()}${key.slice(1)}`);
+  }
+}
+
 async function init() {
+  attachChromeTips();
   $('#profile-switch').addEventListener('change', (e) => setProfile(Number(e.target.value)));
   $('#month-switch').addEventListener('change', async (e) => {
     if (!e.target.value) return;

@@ -822,40 +822,48 @@ figure.fig .money {
   flex: 1;
 }
 
-.info-tip {
+/* delayed tooltip: the label text itself is the trigger (.tip-trigger), the tip is
+   .tooltip; shown via the hidden attribute by app.js (2s hover, instant focus/tap,
+   Escape dismisses). Sizes in rem so 200% text scaling keeps it readable. */
+.tip-wrap {
   position: relative;
   display: inline-flex;
-  flex-shrink: 0;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 2px;
+  min-width: 0;
 }
 
-.info-icon {
-  width: 16px;
-  height: 16px;
-  border-radius: 999px;
-  border: 1px solid var(--line-2);
-  color: var(--ink-3);
-  font-size: 0.65rem;
-  font-weight: 700;
-  font-style: normal;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
+.has-tip {
+  position: relative;
+}
+
+.tip-trigger {
   cursor: help;
+  text-decoration: underline dotted;
+  text-underline-offset: 3px;
+  text-decoration-color: var(--ink-3);
+  border-radius: var(--radius-s);
 }
 
-.info-tip .tip {
-  display: none;
+.tip-trigger:focus-visible,
+.has-tip:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.tooltip {
   position: absolute;
   top: calc(100% + 6px);
   left: 0;
-  z-index: 30;
+  z-index: 40;
   width: max-content;
-  max-width: min(280px, 80vw);
+  max-width: min(20rem, 80vw);
   background: var(--ink);
   color: var(--canvas);
   font-size: 0.78rem;
   font-weight: 500;
-  line-height: 1.4;
+  line-height: 1.45;
   letter-spacing: normal;
   text-transform: none;
   padding: var(--sp-2) var(--sp-3);
@@ -863,15 +871,8 @@ figure.fig .money {
   box-shadow: var(--shadow-2);
 }
 
-.info-tip:hover .tip,
-.info-tip:focus-visible .tip {
-  display: block;
-}
-
-.info-tip:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 2px;
-  border-radius: 999px;
+.tooltip[hidden] {
+  display: none;
 }
 
 .split-bar {

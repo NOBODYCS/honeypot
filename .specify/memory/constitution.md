@@ -137,6 +137,13 @@ step.
   never a hardcoded pixel guess, so a wrapped topbar can never overlap them.
 - Every input has an i18n'd aria-label (no hardcoded English labels); optional % values render
   as "—" via pctStr(), never the literal "null%".
+- Every user-visible label, field, section header, figure caption, button, hint, badge and empty
+  state gets a short plain visible label (max ~4 words, no jargon) plus a deeper explanation in a
+  delayed tooltip: the label text itself is the trigger, the tip opens after ~2s of hover and
+  immediately on keyboard focus and tap, it is dismissible with Escape and on focus-out, it has
+  `role="tooltip"`, the associated field references it via `aria-describedby`, and its width is
+  rem-based so it survives 200% text scaling (SC 1.4.4). i18n convention: label key `K` pairs
+  with tooltip key `tip<Capitalized(K)>` in BOTH locales, enforced by tests/ui-static.test.js.
 - Static file serving must contain path resolution strictly inside PUBLIC_DIR (separator
   boundary check), guarded by test + smoke.
 - Plan saves are ID-PRESERVING upserts in one transaction: items sent with an existing id are
@@ -192,10 +199,20 @@ change, a semantic version bump (MAJOR for removed/redefined principles, MINOR f
 principles/sections, PATCH for clarifications), and a change-log entry. All PRs must verify
 compliance; any complexity beyond the principles above must be justified in the PR.
 
-**Version**: 1.8.0 | **Ratified**: 2026-11-17 | **Last Amended**: 2026-11-18
+**Version**: 1.9.0 | **Ratified**: 2026-11-17 | **Last Amended**: 2026-11-18
 
 ## Change Log
 
+- **1.9.0 (2026-11-18)** — MINOR: plain-language labels + delayed tooltip mechanism
+  (Principle X addition). Every visible label/field/header/caption/button/hint/badge/empty
+  state now has a short plain label (max ~4 words) plus a tooltip: label text is the trigger,
+  2s hover delay, instant on focus/tap, Escape-dismissible, `role="tooltip"` +
+  `aria-describedby` association, rem-based sizing for 200% text scaling. i18n pairing
+  `K` → `tip<Capitalized(K)>` in en+pl enforced by ui-static tests (57/57 pass). Visible
+  labels reworded per owner wording (contribution to shared costs, % of shared costs,
+  paid so far by whom, left of shared plan, settle-up as a who-pays-whom sentence, partner
+  chip-in labeled with the partner's name). NOTE: the pot model wording is intentionally kept
+  for now — a no-pot rework is agreed as a later step, not yet implemented.
 - **1.8.0 (2026-11-18)** — MINOR: external-audit fixes. Plan PUT no longer FK-500s after an
   expense is linked (id-preserving upsert + orphan links); autosave flushes before month
   switch/close and reports skipped rows; "New month" header button + next-free-ym creation so a

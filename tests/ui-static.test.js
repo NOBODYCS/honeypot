@@ -34,8 +34,19 @@ test('i18n: en/pl key parity and placeholder parity', () => {
 test('i18n: every t() key and data-i18n(-aria) key exists; no dead keys', () => {
   const { en } = i18n();
   const used = new Set([...app.matchAll(/\bt\('([\w-]+)'/g)].map((m) => m[1]));
+  for (const m of app.matchAll(/\btipWrap\('([\w-]+)',\s*'([\w-]+)'/g)) { used.add(m[1]); used.add(m[2]); }
+  for (const m of app.matchAll(/\bfield\('([\w-]+)',[\s\S]{0,400}?,\s*'([\w-]+)'/g)) { used.add(m[1]); used.add(m[2]); }
+  for (const m of app.matchAll(/\battachTip\([^,]+,\s*'([\w-]+)'/g)) used.add(m[1]);
+  for (const m of app.matchAll(/\bfigRow\('([\w-]+)',[\s\S]{0,300}?,\s*'([\w-]+)'/g)) { used.add(m[1]); used.add(m[2]); }
+  for (const m of app.matchAll(/\bfig\('([\w-]+)',[\s\S]{0,200}?,\s*'([\w-]+)'/g)) { used.add(m[1]); used.add(m[2]); }
   for (const m of html.matchAll(/data-i18n(?:-aria)?="([\w-]+)"/g)) used.add(m[1]);
   for (const pr of ['presetPaper', 'presetInk', 'presetSunrise', 'presetBerry', 'presetOcean', 'presetContrast']) used.add(pr);
+  for (const k of ['fixedShared', 'variableShared', 'tipFixedShared', 'tipVariableShared', 'editHint', 'readOnly', 'tipEditHint', 'tipReadOnly', 'tipClosed']) used.add(k);
+  /* attachChromeTips() builds these keys dynamically from the chrome label list */
+  for (const k of ['monthPlan', 'liveFigures', 'spendingLog', 'personalObligatory', 'noMonthTitle', 'noMonthText', 'whoAreYou', 'settings', 'history', 'leftoverLog', 'closeMonth', 'newMonth', 'createMonth', 'open', 'balance']) {
+    used.add(k);
+    used.add(`tip${k[0].toUpperCase()}${k.slice(1)}`);
+  }
   for (const k of used) assert.ok(k in en, `used but missing key: ${k}`);
   for (const k of Object.keys(en)) assert.ok(used.has(k) || k.startsWith('err_'), `dead key: ${k}`);
 });
@@ -237,6 +248,40 @@ test('migrations: expenses.category column guarded', () => {
   assert.ok(db.includes("ALTER TABLE expenses ADD COLUMN category"));
 });
 
+/* ---------- tooltips: delayed mechanism + label/tip key parity ---------- */
+
+test('tooltips: mechanism (label-text trigger, 2s hover, focus/tap, Escape, aria-describedby, role=tooltip, rem sizing)', () => {
+  assert.ok(app.includes('const TIP_HOVER_MS = 2000'), '2s hover delay constant missing');
+  assert.ok(app.includes('function initTip') && app.includes('function tipWrap') && app.includes('function attachTip'), 'tooltip helpers missing');
+  assert.ok(app.includes("role: 'tooltip'"), 'tooltip must have role=tooltip');
+  assert.ok(app.includes("'aria-describedby'"), 'tip must be associated via aria-describedby');
+  assert.ok(app.includes("e.key === 'Escape'"), 'tooltip must be dismissible with Escape');
+  assert.ok(!app.includes('infoTip'), 'old instant infoTip must be gone');
+  assert.ok(css.includes('.tooltip') && css.includes('.tip-trigger'), 'tooltip CSS classes missing');
+  assert.ok(/\.tooltip\s*\{[^}]*max-width:\s*min\(20rem/.test(css), 'tooltip width must be rem-based for 200% text scaling');
+});
+
+test('tooltips: every field-label i18n key has a matching tip<Key> key in BOTH en and pl', () => {
+  const { en, pl } = i18n();
+  const labelKeys = [
+    'salaries', 'salaryFor', 'fixedShared', 'variableShared', 'personalObligatory',
+    'monthPlan', 'liveFigures', 'spendingLog', 'label', 'amount', 'partnerShare', 'splitLabel',
+    'date', 'category', 'description', 'linkItem', 'payer', 'profile', 'note',
+    'currency', 'language', 'categories', 'themeColors', 'mode', 'sectionProfile', 'sectionApp',
+    'settings', 'history', 'leftoverLog', 'closeMonth', 'newMonth', 'createMonth',
+    'noMonthTitle', 'noMonthText', 'noItems', 'noExpenses', 'nothingYet', 'historyEmpty',
+    'noLeftoverMonth', 'open', 'closed', 'balance',
+    'transferAfterPayday', 'guaranteedLeft', 'plannedLeft', 'projectedLeft', 'potBalance',
+    'settleUp', 'ofIncome', 'splitOfPlan', 'coversSpending', 'fairIncome',
+    'editHint', 'readOnly', 'monthClosed', 'contributions', 'paid', 'whoAreYou',
+  ];
+  for (const k of labelKeys) {
+    const tipKey = `tip${k[0].toUpperCase()}${k.slice(1)}`;
+    assert.ok(tipKey in en, `missing en key ${tipKey} for label ${k}`);
+    assert.ok(tipKey in pl, `missing pl key ${tipKey} for label ${k}`);
+  }
+});
+
 /* ---------- round 7 guards: audit fixes ---------- */
 
 test('create-month: header New month button wired, next-free ym picker, no fake month option', () => {
@@ -279,7 +324,7 @@ test('chrome/a11y: header save indicator, balance hidden at zero, label-wrapped 
   assert.ok(f.includes("el('label', { class: 'field'"), 'field() must wrap the control in a real <label>');
   assert.ok(app.includes("role: 'group'") && app.includes("t('newItem')"), 'item cards need group aria-labels');
   const { en, pl } = i18n();
-  assert.ok(!String(en.ofIncome).startsWith('%') && !String(pl.ofIncome).startsWith('%'), 'ofIncome must not start with % (doubled %%)');
+  assert.ok(!/%\s*\$\{[^}]*\}\s*.*t\('ofIncome'\)/.test(app) && !app.includes("% ${t('ofIncome')}"), 'ofIncome must not be used as a suffix after a raw % (doubled %%)');
   assert.ok(/\.dialog-panel\s*\{[^}]*min\(640px/.test(css), 'dialog panels should be wider for summary tables');
   assert.ok(/\.personal-row input\[type='number'\]\s*\{[^}]*min-width/.test(css), 'money inputs must be able to grow (no clipped amounts)');
   assert.ok(api.includes('seenCats'), 'categories must be deduped server-side');
