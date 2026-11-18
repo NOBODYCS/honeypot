@@ -36,9 +36,10 @@ leftover money. Nothing rolls over — every month starts fresh.
   personal-support breakdown; the month locks and appears in read-only History.
 - Leftover log (most recently closed month), settings (names, themes, currency, categories,
   language).
-- **Per-profile theme presets** picked from Settings (paper / paper dark / ink / high contrast —
-  each preset changes colors, fonts, radii, density and shadows together) via the `data-theme`
-  attribute — styles only, the layout is identical for both partners. Dark mode is a preset.
+- **Per-profile theme presets** picked from Settings (six families: paper, ink, sunrise, berry,
+  ocean, contrast — each with a light AND a dark mode, changing colors, fonts, radii, density and
+  shadows together) via the `data-theme` + `data-mode` attributes — styles only, the layout is
+  identical for both partners. Dark mode is the mode toggle, not a separate preset.
 - English UI with a language switch; modern accessible frontend built per Google's Modern Web
   Guidance (see `.vibe/skills/modern-web-guidance`) with a deliberate, non-generic art direction.
 

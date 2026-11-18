@@ -226,7 +226,13 @@ const el = (tag, attrs = {}, ...children) => {
     if (k.startsWith('on')) node.addEventListener(k.slice(2), v);
     else if (k === 'class') node.className = v;
     else if (k === 'text') node.textContent = v;
-    else if (v === true) node.setAttribute(k, '');
+    else if (k === 'style') {
+      /* CSSOM setProperty, not the style attribute: CSP style-src 'self' blocks inline style attributes. */
+      for (const decl of String(v).split(';')) {
+        const i = decl.indexOf(':');
+        if (i > 0) node.style.setProperty(decl.slice(0, i).trim(), decl.slice(i + 1).trim());
+      }
+    } else if (v === true) node.setAttribute(k, '');
     else if (v !== false && v != null) node.setAttribute(k, v);
   }
   for (const child of children) {
@@ -419,17 +425,18 @@ function moneyInput(cents, oninput, { disabled = false } = {}) {
     step: '0.01',
     min: '0',
     inputmode: 'decimal',
-    'aria-label': 'amount',
+    'aria-label': t('amount'),
     value: ((cents ?? 0) / 100).toFixed(2),
     disabled,
     oninput: (e) => oninput(parseMoney(e.target.value)),
   });
 }
 
-function textInput(value, oninput, { disabled = false } = {}) {
+function textInput(value, oninput, { disabled = false, aria } = {}) {
   return el('input', {
     type: 'text',
     value: value ?? '',
+    'aria-label': aria ?? t('label'),
     disabled,
     oninput: (e) => oninput(e.target.value),
   });
@@ -835,7 +842,11 @@ function shareHint() {
   const iA = s.salaries.A > 0 ? pct(s.contributions.A, s.salaries.A) : null;
   const iB = s.salaries.B > 0 ? pct(s.contributions.B, s.salaries.B) : null;
   const fair = iA != null && iB != null && Math.abs(iA - iB) < 0.05;
-  return `${nameA} ${cA}% · ${nameB} ${cB}% ${t('ofPlan')} — ${fair && iA != null ? t('fairIncome', { pct: iA }) : `${nameA} ${iA}% · ${nameB} ${iB}% ${t('ofIncome')}`}`;
+  return `${nameA} ${cA}% · ${nameB} ${cB}% ${t('ofPlan')} — ${fair && iA != null ? t('fairIncome', { pct: iA }) : `${nameA} ${pctStr(iA)} · ${nameB} ${pctStr(iB)} ${t('ofIncome')}`}`;
+}
+
+function pctStr(v) {
+  return v == null ? t('none') : `${v}%`;
 }
 
 function infoTip(text) {
@@ -864,7 +875,7 @@ function renderFigures() {
       legendItem('seg-a', `${names.A} — ${cA}%`),
       legendItem('seg-b', `${names.B} — ${cB}%`)),
     el('div', { class: 'block-head' },
-      el('p', { class: 'hint', text: fair && iA != null ? t('fairIncome', { pct: iA }) : `${names.A} ${iA}% · ${names.B} ${iB}% ${t('ofIncome')}` }),
+      el('p', { class: 'hint', text: fair && iA != null ? t('fairIncome', { pct: iA }) : `${names.A} ${pctStr(iA)} · ${names.B} ${pctStr(iB)} ${t('ofIncome')}` }),
       infoTip(t('tipIncome')))
   );
 
@@ -888,7 +899,7 @@ function renderFigures() {
       el('section', { class: 'partner-col' },
         el('h3', { class: p === 'A' ? 'who-a' : 'who-b', text: `${names[p]} — ${p === 'A' ? cA : cB}% ${t('ofPlan')}` }),
         figRow(t('transferAfterPayday'), fmtMoney(s.contributions[p])),
-        figRow(t('ofIncome'), (p === 'A' ? iA : iB) != null ? `${p === 'A' ? iA : iB}%` : t('none')),
+        figRow(t('ofIncome'), pctStr(p === 'A' ? iA : iB)),
         figRow(t('guaranteedLeft'), fmtMoney(s.guaranteedLeft[p])),
         figRow(t('plannedLeft'), fmtMoney(s.plannedLeft[p])),
         figRow(t('projectedLeft'), fmtMoney(s.projectedLeft[p]))
@@ -923,9 +934,9 @@ function renderExpenses() {
     const [yr, mo] = state.month.ym.split('-').map(Number);
     const lastDay = new Date(Date.UTC(yr, mo, 0)).getUTCDate();
     const lastD2 = String(lastDay).padStart(2, '0');
-    const dateInput = el('input', { type: 'date', value: `${state.month.ym}-01`, min: `${state.month.ym}-01`, max: `${state.month.ym}-${lastD2}` });
-    const descInput = el('input', { type: 'text', placeholder: t('description') });
-    const amountInput = el('input', { type: 'number', step: '0.01', min: '0.01', inputmode: 'decimal', placeholder: t('amount') });
+    const dateInput = el('input', { type: 'date', value: `${state.month.ym}-01`, min: `${state.month.ym}-01`, max: `${state.month.ym}-${lastD2}`, 'aria-label': t('date') });
+    const descInput = el('input', { type: 'text', placeholder: t('description'), 'aria-label': t('description') });
+    const amountInput = el('input', { type: 'number', step: '0.01', min: '0.01', inputmode: 'decimal', placeholder: t('amount'), 'aria-label': t('amount') });
     const itemSelect = el('select', {},
       el('option', { value: '', text: `${t('linkItem')}: ${t('unplanned')}` }),
       ...state.month.items
@@ -1285,8 +1296,8 @@ async function renderLeftovers(historyData) {
     }
   }
   const editableMonth = ym === state.mostRecentClosedYm;
-  const amountInput = el('input', { type: 'number', step: '0.01', min: '0.01', inputmode: 'decimal', placeholder: t('amount') });
-  const noteInput = el('input', { type: 'text', placeholder: t('note') });
+  const amountInput = el('input', { type: 'number', step: '0.01', min: '0.01', inputmode: 'decimal', placeholder: t('amount'), 'aria-label': t('amount') });
+  const noteInput = el('input', { type: 'text', placeholder: t('note'), 'aria-label': t('note') });
   const profileSelect = el('select', {},
     ...state.profiles.map((p) => el('option', { value: p.id, text: p.name }))
   );
@@ -1392,6 +1403,16 @@ async function init() {
       if (e.target === dialog && dialog.id !== 'dlg-pick') dialog.close();
     });
   }
+  $('#dlg-pick').addEventListener('cancel', (e) => {
+    if (!state.profileId) e.preventDefault();
+  });
+  $('#dlg-settings').addEventListener('close', () => applyTheme(currentProfile()));
+  const syncTopbarH = () => {
+    const h = document.querySelector('.topbar')?.offsetHeight ?? 84;
+    document.documentElement.style.setProperty('--topbar-h', `${h}px`);
+  };
+  window.addEventListener('resize', syncTopbarH);
+  syncTopbarH();
   $('#dlg-confirm-cancel').addEventListener('click', () => {
     confirmAction = null;
     $('#dlg-confirm').close();

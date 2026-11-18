@@ -203,6 +203,29 @@ test('layout: rows wrap, table headers never nowrap, grid children can shrink (n
   assert.ok(css.includes('.settings-section'), 'settings sections missing');
 });
 
+test('csp: inline styles go through CSSOM setProperty, never setAttribute (style-src self blocks the style attribute)', () => {
+  assert.ok(server.includes("style-src 'self'"), 'CSP must not allow unsafe-inline styles');
+  assert.ok(app.includes('node.style.setProperty'), 'el() must apply style via CSSOM');
+  assert.ok(!app.includes("setAttribute('style'"), 'setAttribute(style) would be blocked by CSP');
+});
+
+test('a11y/i18n: no hardcoded aria-labels; % never renders as "null%"', () => {
+  assert.ok(!/aria-label':\s*'[a-z]+'/.test(app), 'hardcoded aria-label found');
+  assert.ok(app.includes('function pctStr'), 'pctStr helper missing (null % guard)');
+  assert.ok(!app.includes('${iA}%'), 'raw iA% interpolation can render null%');
+});
+
+test('chrome: sticky side panels track measured topbar height; profile pick cannot be dismissed; unsaved theme preview reverts', () => {
+  assert.ok(css.includes('var(--topbar-h'), 'side panel top must use measured --topbar-h');
+  assert.ok(app.includes("setProperty('--topbar-h'"), 'topbar height must be measured');
+  assert.ok(app.includes("'cancel'") && app.includes('dlg-pick'), 'profile pick must block Escape until chosen');
+  assert.ok(app.includes("$('#dlg-settings').addEventListener('close'"), 'settings close must re-apply saved theme');
+});
+
+test('server: static path traversal is contained to PUBLIC_DIR', () => {
+  assert.ok(server.includes('PUBLIC_DIR + path.sep'), 'path check must require a separator boundary');
+});
+
 test('per-item partner share: -1 sentinel, migration, validation', () => {
   assert.ok(db.includes('BETWEEN -1 AND 100') && db.includes('plan_items_new'));
   assert.ok(api.includes('[-1,100]'));

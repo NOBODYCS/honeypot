@@ -34,7 +34,7 @@ function sendJson(res, status, body) {
 
 function sendStatic(req, res, urlPath) {
   let filePath = path.normalize(path.join(PUBLIC_DIR, urlPath));
-  if (!filePath.startsWith(PUBLIC_DIR)) {
+  if (filePath !== PUBLIC_DIR && !filePath.startsWith(PUBLIC_DIR + path.sep)) {
     res.writeHead(403, SECURITY_HEADERS);
     res.end('Forbidden');
     return;

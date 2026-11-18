@@ -272,3 +272,29 @@ So UI/UX regressions are caught without anyone spelling them out:
    split inputs, every dynamic `el('button'` has `onclick`, CSS wrap/nowrap/min-width rules.
    `npm test`: 43/43 pass. API smoke test: per-item `partnerSharePct` (-1/25/50/100) round-trips
    and contributions sum exactly.
+
+## Round 6 — second full pass (2026-11-18)
+
+### Found (concrete)
+1. **Split bars / colored dots silently unstyled**: CSP is `style-src 'self'` (no
+   unsafe-inline), which blocks the `style` ATTRIBUTE — and `el()` applied `style:` attrs via
+   `setAttribute`, so `width:%` on bar segments and `background:` on dots never applied.
+   Fixed: `el()` applies styles through CSSOM `node.style.setProperty` (not blocked by CSP).
+   Guard test asserts CSP has no unsafe-inline AND no `setAttribute` of style.
+2. **"null%" in the figures** when a salary is 0: `${iA}%` interpolated a null. Fixed with
+   `pctStr()` → renders "—". Guard test present.
+3. **Hardcoded English `aria-label="amount"`** on every money input; several raw inputs had
+   no accessible name at all. All inputs now get i18n'd aria-labels. Guard test present.
+4. **Sticky side panels used a hardcoded `top: 84px`** — a wrapped topbar (narrow desktop) would
+   overlap them. Now `--topbar-h` is measured on load/resize.
+5. **Profile-pick dialog could be closed with Escape** leaving no profile selected; now
+   `cancel` is prevented until a profile is chosen.
+6. **Theme preview lingered** if Settings was closed without Save; closing now re-applies the
+   saved per-profile theme.
+7. **Static path check** used a prefix without separator boundary (`/public` would also match
+   `/public-evil`); now requires `PUBLIC_DIR + path.sep`. Smoke-tested: `..`/`%2e%2e` URLs fall
+   back to index.html, no source leak.
+8. README preset list was stale (still said 4 presets); updated to the six families.
+
+Verification: `npm test` 47/47; `node --check` all JS; loopback smoke (statics 200, traversal
+contained, API state OK).

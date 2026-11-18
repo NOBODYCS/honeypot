@@ -128,6 +128,17 @@ step.
   partner's name.
 - Settings is grouped into labeled sections — "Your profile" (name/theme/mode, per-profile
   only), "App" (currency/language), "Expense categories" — with exactly ONE Save button.
+  Closing Settings without saving re-applies the saved theme (no lingering unsaved preview),
+  and the mandatory profile pick cannot be dismissed with Escape until a profile is chosen.
+- Inline styles are applied via CSSOM (`el.style.setProperty`), NEVER the `style` attribute:
+  the CSP (`style-src 'self'`, no unsafe-inline) blocks inline style attributes, so bars/dots
+  would silently lose their styling. Encoded as a guard test.
+- Sticky side panels offset by the MEASURED topbar height (`--topbar-h`, set on load/resize),
+  never a hardcoded pixel guess, so a wrapped topbar can never overlap them.
+- Every input has an i18n'd aria-label (no hardcoded English labels); optional % values render
+  as "—" via pctStr(), never the literal "null%".
+- Static file serving must contain path resolution strictly inside PUBLIC_DIR (separator
+  boundary check), guarded by test + smoke.
 
 ## Technology & Constraints
 
@@ -162,10 +173,18 @@ change, a semantic version bump (MAJOR for removed/redefined principles, MINOR f
 principles/sections, PATCH for clarifications), and a change-log entry. All PRs must verify
 compliance; any complexity beyond the principles above must be justified in the PR.
 
-**Version**: 1.6.0 | **Ratified**: 2026-11-17 | **Last Amended**: 2026-11-18
+**Version**: 1.7.0 | **Ratified**: 2026-11-17 | **Last Amended**: 2026-11-18
 
 ## Change Log
 
+- **1.7.0 (2026-11-18)** — MINOR: second full review pass. Fixed: CSP `style-src 'self'` was
+  silently blocking all inline `style` attributes (split bars/colored dots unstyled) — el()
+  now applies styles via CSSOM setProperty; "null%" could render when a salary was 0 (pctStr
+  guard); hardcoded English aria-label on money inputs → i18n labels on every input; sticky
+  side panels now offset by the measured topbar height; profile-pick dialog can't be
+  Escape-dismissed before choosing; closing Settings without saving reverts the theme preview;
+  static path check tightened to a separator boundary. Guards added for all of the above
+  (47/47 tests pass).
 - **1.6.0 (2026-11-18)** — MINOR: fixed literal "null" text from raw nulls passed to
   `replaceChildren` (now filtered via `kids()`, guarded by tests); plan items (fixed/variable)
   render as cards with a two-sided A%/B% split editor (synced to 100, blank = salary split,
