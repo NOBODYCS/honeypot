@@ -158,6 +158,29 @@ Verification: `node --check` on all JS; `npm test` 25/25; live server smoke test
 contrast re-measured from the final stylesheet tokens (all text pairs >= 4.5:1, borders
 >= 3:1 in both modes).
 
+## Round 2 — theme presets & dark mode (2026-11-18)
+
+- Customization reworked: free-form color pickers replaced by 4 predefined FULL-theme presets
+  (`paper`, `paper-dark`, `ink`, `contrast`) selected in Settings with live preview. Each
+  preset changes colors + fonts + radii + density + shadows together (`data-theme` attribute).
+- **Dark mode fixed**: previously `data-mode='dark'` was clobbered by inline light colors
+  written by `applyTheme()`. Now the preset owns the whole token set incl. `color-scheme`.
+  Server validates `theme.preset`; legacy color themes normalize to `paper` on read.
+- All 4 presets re-measured from the shipped CSS: every text pair >= 4.5:1, borders >= 3:1.
+
+## Round 3 — figures, categories, settings (2026-11-18)
+
+- "Personal obligatory" renamed to "Personal expenses" (en/pl, aria-labels, README).
+- Live figures redesigned: split bar (% per side of the shared plan, driven by the salary
+  inputs), live coverage bar (who fronted what % of actual spending vs the pot — changed via
+  the payer pick on each expense), per-partner leftover rows, pot balance + settle-up, and the
+  fairness note "each side pays X% of their own income" (equal by construction, R2/R4).
+- Expense categories are now selectable per expense (new `expenses.category` column with a
+  guarded `ALTER TABLE` migration) and shown as color-coded chips in the log and in Settings.
+- Settings has ONE Save button (saves all profiles + currency/language/categories at once);
+  per-profile "Reset to default" just re-selects the paper preset.
+- Dialog panels compacted so default content fits 100dvh without scrolling.
+
 ## Guidelines checked against
 - WCAG 2.2 (W3C): SC 1.4.3 contrast ≥ 4.5:1 normal / 3:1 large text; SC 1.4.11 non-text
   ≥ 3:1; SC 2.4.7 visible focus; SC 2.5.8 target size ≥ 24×24px (44×44px recommended —

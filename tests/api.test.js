@@ -26,7 +26,7 @@ test('GET /api/state returns seeded profiles, settings, current month', async ()
   assert.ok(Array.isArray(body.settings.categories));
   assert.match(body.currentYm, /^\d{4}-\d{2}$/);
   assert.equal(body.openMonth, null);
-  assert.ok(body.profiles[0].theme.accent);
+  assert.equal(body.profiles[0].theme.preset, 'paper');
 });
 
 test('PUT /api/settings updates currency, language, categories', async () => {
@@ -68,6 +68,18 @@ test('PUT /api/profiles/:id updates name and merges theme', async () => {
   assert.equal(body.theme.background, body.theme.background);
   const state = await call('GET', '/api/state');
   assert.equal(state.body.profiles[0].name, 'Profile one');
+});
+
+test('profiles are seeded with theme presets and accept preset changes', async () => {
+  const state = await call('GET', '/api/state');
+  assert.equal(state.body.profiles[0].theme.preset, 'paper');
+  assert.equal(state.body.profiles[1].theme.preset, 'paper-dark');
+  const { body } = await call('PUT', '/api/profiles/1', { theme: { preset: 'ink' } });
+  assert.equal(body.theme.preset, 'ink');
+  await assert.rejects(
+    () => call('PUT', '/api/profiles/1', { theme: { preset: 'nope' } }),
+    (e) => e instanceof ApiError && e.status === 400
+  );
 });
 
 test('PUT /api/profiles/:id rejects bad input', async () => {

@@ -8,7 +8,7 @@ const I18N = {
     history: 'History',
     leftoverLog: 'Leftover log',
     closeMonth: 'Close month',
-    personalObligatory: 'Personal obligatory',
+    personalObligatory: 'Personal expenses',
     noMonthTitle: 'No month open',
     noMonthText: 'Create the current month to start planning.',
     createMonth: 'Create month',
@@ -89,9 +89,13 @@ const I18N = {
     pot: 'Pot',
     paidByStrip: 'Paid by {name}',
     resetTheme: 'Reset to default',
-    contrast: 'Contrast',
-    ok: 'OK',
-    low: 'too low',
+    presetPaper: 'Paper',
+    presetPaperDark: 'Paper dark',
+    presetInk: 'Ink',
+    presetContrast: 'High contrast',
+    splitOfPlan: 'Split of the shared plan',
+    coversSpending: 'Who covers spending so far',
+    fairIncome: 'Each side pays {pct}% of their own income — equal, so fair by income',
   },
   pl: {
     profileLabel: 'Aktualny profil',
@@ -100,7 +104,7 @@ const I18N = {
     history: 'Historia',
     leftoverLog: 'Wolne \u015brodki',
     closeMonth: 'Zamknij miesi\u0105c',
-    personalObligatory: 'Zobowi\u0105zania osobiste',
+    personalObligatory: 'Wydatki osobiste',
     noMonthTitle: 'Nie otwarto miesi\u0105ca',
     noMonthText: 'Utw\u00f3rz bie\u017c\u0105cy miesi\u0105c, \u017ceby zacz\u0105\u0107 planowanie.',
     createMonth: 'Utw\u00f3rz miesi\u0105c',
@@ -181,9 +185,13 @@ const I18N = {
     pot: 'Pula',
     paidByStrip: 'Zapłacił(a): {name}',
     resetTheme: 'Przywróć domyślne',
-    contrast: 'Kontrast',
-    ok: 'OK',
-    low: 'za niski',
+    presetPaper: 'Papier',
+    presetPaperDark: 'Papier — ciemny',
+    presetInk: 'Atrament',
+    presetContrast: 'Wysoki kontrast',
+    splitOfPlan: 'Podział planu wspólnego',
+    coversSpending: 'Kto pokrywa wydatki do tej pory',
+    fairIncome: 'Każda strona płaci {pct}% własnego dochodu — równo, czyli uczciwie',
   },
 };
 
@@ -258,84 +266,20 @@ const THEME_PROPS = [
   '--line', '--line-2', '--paper', '--surface', '--surface-1', '--surface-2',
 ];
 
-const DEFAULT_THEME = { mode: 'light', accent: '#1f5f5b', background: '#faf6ef', surface: '#ffffff', text: '#241c14' };
+const PRESET_IDS = ['paper', 'paper-dark', 'ink', 'contrast'];
 
-function hexRgb(hex) {
-  const c = hex.replace('#', '');
-  return [0, 2, 4].map((i) => parseInt(c.slice(i, i + 2), 16));
-}
-
-function luminance(hex) {
-  const [r, g, b] = hexRgb(hex).map((v) => {
-    v /= 255;
-    return v <= 0.04045 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
-  });
-  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
-}
-
-function contrast(a, b) {
-  const [l1, l2] = [luminance(a), luminance(b)].sort((x, y) => y - x);
-  return (l1 + 0.05) / (l2 + 0.05);
-}
-
-function mixHex(a, b, t) {
-  const A = hexRgb(a);
-  const B = hexRgb(b);
-  return '#' + A.map((v, i) => Math.round(v * (1 - t) + B[i] * t).toString(16).padStart(2, '0')).join('');
-}
-
-function isHex(v) {
-  return typeof v === 'string' && /^#[0-9a-fA-F]{6}$/.test(v);
-}
-
-function ensureContrast(fg, refs, min) {
-  const list = Array.isArray(refs) ? refs : [refs];
-  if (list.every((r) => contrast(fg, r) >= min)) return fg;
-  for (const toward of ['#000000', '#ffffff']) {
-    let c = fg;
-    for (let i = 0; i < 25; i++) {
-      c = mixHex(c, toward, 0.08);
-      if (list.every((r) => contrast(c, r) >= min)) return c;
-    }
-  }
-  return list.every((r) => contrast('#000000', r) >= min) ? '#000000' : '#ffffff';
-}
-
-function ensureBorder(color, refs, min = 3) {
-  return ensureContrast(color, refs, min);
-}
-
-function pickAccentInk(accent) {
-  return contrast('#ffffff', accent) >= contrast('#141414', accent) ? '#ffffff' : '#141414';
-}
+const PRESETS = [
+  { id: 'paper', key: 'presetPaper', dots: ['#faf6ef', '#ffffff', '#1f5f5b'] },
+  { id: 'paper-dark', key: 'presetPaperDark', dots: ['#1c1811', '#241f17', '#7fc4bb'] },
+  { id: 'ink', key: 'presetInk', dots: ['#101014', '#17171c', '#ffb454'] },
+  { id: 'contrast', key: 'presetContrast', dots: ['#ffffff', '#f2f2f2', '#0b3d91'] },
+];
 
 function applyTheme(profile) {
-  const theme = profile?.theme ?? {};
   const root = document.documentElement;
   for (const prop of THEME_PROPS) root.style.removeProperty(prop);
-  const dark = theme.mode === 'dark';
-  root.dataset.mode = dark ? 'dark' : 'light';
-  const bg = isHex(theme.background) ? theme.background : dark ? '#1c1811' : DEFAULT_THEME.background;
-  const surface = isHex(theme.surface) ? theme.surface : dark ? '#241f17' : DEFAULT_THEME.surface;
-  const fg = ensureContrast(isHex(theme.text) ? theme.text : dark ? '#f1e8da' : DEFAULT_THEME.text, [bg, surface], 4.5);
-  const accent = ensureContrast(isHex(theme.accent) ? theme.accent : dark ? '#7fc4bb' : DEFAULT_THEME.accent, [bg, surface], 4.5);
-  const set = {
-    '--accent': accent,
-    '--accent-ink': pickAccentInk(accent),
-    '--bg': bg,
-    '--canvas': bg,
-    '--fg': fg,
-    '--ink': fg,
-    '--ink-2': ensureContrast(mixHex(fg, bg, 0.72), [bg, surface], 4.5),
-    '--ink-3': ensureContrast(mixHex(fg, bg, 0.52), [bg, surface], 4.5),
-    '--line': mixHex(fg, surface, 0.82),
-    '--line-2': ensureBorder(mixHex(fg, surface, 0.62), [bg, surface], 3),
-    '--paper': bg,
-    '--surface': surface,
-    '--surface-1': surface,
-    '--surface-2': mixHex(surface, fg, 0.06),
-  };
-  for (const [prop, value] of Object.entries(set)) root.style.setProperty(prop, value);
+  delete root.dataset.mode;
+  root.dataset.theme = PRESET_IDS.includes(profile?.theme?.preset) ? profile.theme.preset : 'paper';
 }
 
 async function withBusy(btn, fn) {
@@ -640,7 +584,8 @@ function renderPlan() {
         disabled: !canEdit,
         onclick: (e) => withBusy(e.currentTarget, savePlan),
       })
-    )
+    ),
+    el('p', { class: 'hint', text: shareHint() })
   );
 
   const fixed = $('#plan-fixed');
@@ -701,34 +646,103 @@ function fig(caption, value) {
   );
 }
 
+function pct(part, whole) {
+  return whole > 0 ? Math.round((part / whole) * 1000) / 10 : 0;
+}
+
+const CATEGORY_COLORS = ['#2e7d32', '#b26a00', '#6a4fb3', '#0b6fa4', '#a63d2f', '#1f5f5b', '#8a6d00', '#595959'];
+
+function colorForCategory(name) {
+  let h = 0;
+  for (const ch of name ?? '') h = (h * 31 + ch.charCodeAt(0)) >>> 0;
+  return CATEGORY_COLORS[h % CATEGORY_COLORS.length];
+}
+
+function splitBar(segments, label) {
+  const bar = el('div', { class: 'split-bar', role: 'img', 'aria-label': label });
+  for (const [cls, w] of segments) {
+    if (w > 0) bar.append(el('span', { class: `seg ${cls}`, style: `width:${w}%` }));
+  }
+  return bar;
+}
+
+function legendItem(cls, text) {
+  return el('span', { class: 'legend-item' }, el('i', { class: `dot ${cls}`, 'aria-hidden': 'true' }), text);
+}
+
+function figRow(label, value) {
+  return el('div', { class: 'fig-row' },
+    el('span', { class: 'fig-label', text: label }),
+    el('span', { class: 'money', text: value })
+  );
+}
+
+function shareHint() {
+  const sal = state.draft?.salaries ?? { 1: 0, 2: 0 };
+  const combined = (sal[1] ?? 0) + (sal[2] ?? 0);
+  const nameA = state.profiles[0]?.name ?? 'A';
+  const nameB = state.profiles[1]?.name ?? 'B';
+  if (combined <= 0) return t('noItems');
+  const incomePct = pct(state.month?.summary?.sharedPlannedTotal ?? 0, combined);
+  return `${nameA} ${pct(sal[1], combined)}% · ${nameB} ${pct(sal[2], combined)}% — ${t('fairIncome', { pct: incomePct })}`;
+}
+
 function renderFigures() {
   const s = state.month.summary;
   const box = $('#figures');
-  const names = { A: state.profiles[0]?.name, B: state.profiles[1]?.name };
+  const names = { A: state.profiles[0]?.name ?? 'A', B: state.profiles[1]?.name ?? 'B' };
   box.replaceChildren();
-  for (const p of ['A', 'B']) {
-    box.append(
-      fig(`${names[p]} — ${t('transferAfterPayday')}`, fmtMoney(s.contributions[p])),
-      fig(`${names[p]} — ${t('guaranteedLeft')}`, fmtMoney(s.guaranteedLeft[p])),
-      fig(`${names[p]} — ${t('plannedLeft')}`, fmtMoney(s.plannedLeft[p])),
-      fig(`${names[p]} — ${t('projectedLeft')}`, fmtMoney(s.projectedLeft[p]))
-    );
+
+  const pA = pct(s.shares.A * 100, 100);
+  const pB = pct(s.shares.B * 100, 100);
+  const planBlock = el('div', { class: 'split-block' },
+    el('h3', { text: t('splitOfPlan') }),
+    splitBar([['seg-a', s.shares.A * 100], ['seg-b', s.shares.B * 100]], `${names.A} ${pA}%, ${names.B} ${pB}%`),
+    el('p', { class: 'split-legend' },
+      legendItem('seg-a', `${names.A} — ${pA}%`),
+      legendItem('seg-b', `${names.B} — ${pB}%`)),
+    el('p', { class: 'hint', text: s.combinedIncome > 0 ? t('fairIncome', { pct: pct(s.sharedPlannedTotal, s.combinedIncome) }) : t('noItems') })
+  );
+
+  const potPaid = s.actualSpent - s.fronted.A - s.fronted.B;
+  const fA = pct(s.fronted.A, s.actualSpent);
+  const fB = pct(s.fronted.B, s.actualSpent);
+  const fPot = pct(potPaid, s.actualSpent);
+  const covBlock = el('div', { class: 'split-block' },
+    el('h3', { text: `${t('coversSpending')} — ${fmtMoney(s.actualSpent)}` }),
+    splitBar([['seg-a', fA], ['seg-b', fB], ['seg-pot', fPot]], `${names.A} ${fA}%, ${names.B} ${fB}%, ${t('pot')} ${fPot}%`),
+    el('p', { class: 'split-legend' },
+      legendItem('seg-a', `${names.A} ${fA}%`),
+      legendItem('seg-b', `${names.B} ${fB}%`),
+      legendItem('seg-pot', `${t('pot')} ${fPot}%`))
+  );
+
+  const cols = el('div', { class: 'partner-cols' },
+    ...['A', 'B'].map((p) =>
+      el('section', { class: 'partner-col' },
+        el('h3', { text: names[p] }),
+        figRow(t('transferAfterPayday'), fmtMoney(s.contributions[p])),
+        figRow(t('guaranteedLeft'), fmtMoney(s.guaranteedLeft[p])),
+        figRow(t('plannedLeft'), fmtMoney(s.plannedLeft[p])),
+        figRow(t('projectedLeft'), fmtMoney(s.projectedLeft[p]))
+      )
+    )
+  );
+
+  let settleLine = figRow(t('settleUp'), t('none'));
+  if (s.settle && (s.settle.A !== 0 || s.settle.B !== 0)) {
+    const [p, other] = s.settle.A > 0 ? ['A', 'B'] : ['B', 'A'];
+    settleLine = el('p', { class: 'settle', text: `${t('settleUp')}: ${names[other]} → ${names[p]} ${fmtMoney(Math.abs(s.settle[p]))}` });
   }
   box.append(
-    fig(`${t('actualSpent')} (${t('vsPlan')} ${fmtMoney(s.fixedTotal + s.variablePlannedTotal)})`, fmtMoney(s.actualSpent)),
-    fig(t('potBalance'), fmtMoney(s.potBalance))
+    planBlock,
+    covBlock,
+    cols,
+    el('div', { class: 'split-block' },
+      figRow(t('potBalance'), fmtMoney(s.potBalance)),
+      settleLine
+    )
   );
-  if (s.settle) {
-    const [p, other] = s.settle.A > 0 ? ['A', 'B'] : ['B', 'A'];
-    box.append(
-      fig(
-        t('settleUp'),
-        s.settle.A === 0 && s.settle.B === 0
-          ? t('none')
-          : `${names[other]} → ${names[p]}: ${fmtMoney(Math.abs(s.settle[p]))}`
-      )
-    );
-  }
 }
 
 /* ---------- spending log (US4) ---------- */
@@ -755,9 +769,13 @@ function renderExpenses() {
       el('option', { value: '', text: `${t('payer')}: ${t('potPaid')}` }),
       ...state.profiles.map((p) => el('option', { value: p.id, text: p.name }))
     );
+    const categorySelect = el('select', {},
+      ...state.settings.categories.map((c) => el('option', { value: c, text: c }))
+    );
     form.append(
       el('div', { class: 'form-grid' },
         field(t('date'), dateInput),
+        field(t('category'), categorySelect),
         field(t('description'), descInput),
         field(t('amount'), amountInput),
         field(t('linkItem'), itemSelect),
@@ -770,6 +788,7 @@ function renderExpenses() {
             try {
               state.month = await api('POST', `/api/months/${state.month.ym}/expenses`, {
                 date: dateInput.value,
+                category: categorySelect.value,
                 description: descInput.value,
                 amountCents: parseMoney(amountInput.value),
                 planItemId: itemSelect.value ? Number(itemSelect.value) : null,
@@ -807,12 +826,15 @@ function renderExpenses() {
   list.replaceChildren(
     strip,
     itemTable(
-      [t('date'), t('description'), t('amount'), t('linkItem'), t('payer'), ''],
+      [t('date'), t('category'), t('description'), t('amount'), t('linkItem'), t('payer'), ''],
       state.month.expenses.map((e) => {
         const linked = state.month.items.find((i) => i.id === e.planItemId);
         const payer = state.profiles.find((p) => p.id === e.payerProfileId);
         return el('tr', {},
           el('td', { text: fmtDate(e.date) }),
+          el('td', {}, el('span', { class: 'cat-chip' },
+            el('i', { class: 'cat-dot', style: `background:${colorForCategory(e.category)}`, 'aria-hidden': 'true' }),
+            e.category || t('none'))),
           el('td', { text: e.description }),
           el('td', { class: 'num money', text: fmtMoney(e.amountCents) }),
           el('td', { text: linked?.label ?? t('unplanned') }),
@@ -948,77 +970,46 @@ function renderSettings() {
   const box = $('#settings-body');
   box.replaceChildren();
 
+  const profileEditors = [];
   for (const p of state.profiles) {
-    const colorInputs = ['accent', 'background', 'surface', 'text'].map((key) =>
-      el('input', { type: 'color', value: isHex(p.theme[key]) ? p.theme[key] : '#000000', 'aria-label': t(key) })
-    );
-    const modeGroup = segmented(`mode-${p.id}`, [['light', t('light')], ['dark', t('dark')]], p.theme.mode ?? 'light');
     const nameInput = textInput(p.name, () => {});
-    const readout = el('p', { class: 'mini-hint' });
-    const updateReadout = () => {
-      const tb = contrast(colorInputs[3].value, colorInputs[1].value);
-      const ab = contrast(colorInputs[0].value, colorInputs[1].value);
-      const mark = (r) => `${r.toFixed(1)}:1 ${r >= 4.5 ? t('ok') : t('low')}`;
-      readout.textContent = `${t('contrast')} — ${t('text')}/${t('background')}: ${mark(tb)} · ${t('accent')}: ${mark(ab)}`;
+    let selected = PRESET_IDS.includes(p.theme?.preset) ? p.theme.preset : 'paper';
+    const presetGrid = el('div', { class: 'preset-grid', role: 'radiogroup', 'aria-label': t('themeColors') });
+    const presetButtons = PRESETS.map((pr) => {
+      const btn = el('button', {
+        type: 'button',
+        class: `preset-btn${pr.id === selected ? ' is-selected' : ''}`,
+        role: 'radio',
+        'aria-checked': pr.id === selected ? 'true' : 'false',
+        onclick: () => updateSelection(pr.id),
+      },
+        el('span', { class: 'preset-dots' }, ...pr.dots.map((c) => el('i', { style: `background:${c}` }))),
+        el('span', { class: 'preset-name', text: t(pr.key) })
+      );
+      return btn;
+    });
+    const updateSelection = (id) => {
+      selected = id;
+      presetButtons.forEach((b, i) => {
+        const on = PRESETS[i].id === id;
+        b.classList.toggle('is-selected', on);
+        b.setAttribute('aria-checked', on ? 'true' : 'false');
+      });
+      applyTheme({ theme: { preset: id } });
     };
-    for (const input of colorInputs) input.addEventListener('input', updateReadout);
-    updateReadout();
+    presetGrid.append(...presetButtons);
+    profileEditors.push({ id: p.id, nameInput, getPreset: () => selected });
     box.append(
       el('div', { class: 'stack' },
         el('h3', { text: p.name }),
         field(t('label'), nameInput),
+        field(t('themeColors'), presetGrid),
         el('div', { class: 'form-grid' },
-          el('div', { class: 'field' },
-            el('label', { class: 'field-label', text: t('themeColors') }),
-            el('div', { class: 'swatches' },
-              ...colorInputs.map((input, i) =>
-                field(t(['accent', 'background', 'surface', 'text'][i]), input)
-              )
-            )
-          ),
-          field(t('mode'), modeGroup)
-        ),
-        readout,
-        el('div', { class: 'form-grid' },
-          el('button', {
-            type: 'button',
-            class: 'btn btn-primary',
-            text: t('save'),
-            onclick: (e) => withBusy(e.currentTarget, async () => {
-              const theme = { mode: modeGroup.querySelector('input:checked')?.value ?? 'light' };
-              ['accent', 'background', 'surface', 'text'].forEach((key, i) => {
-                theme[key] = colorInputs[i].value;
-              });
-              try {
-                await api('PUT', `/api/profiles/${p.id}`, { name: nameInput.value, theme });
-                await refreshState();
-                renderSettings();
-                notify('ok', t('saved'));
-              } catch (err) {
-                notifyError(err);
-              }
-            }),
-          }),
           el('button', {
             type: 'button',
             class: 'btn',
             text: t('resetTheme'),
-            onclick: (e) => withBusy(e.currentTarget, async () => {
-              colorInputs[0].value = DEFAULT_THEME.accent;
-              colorInputs[1].value = DEFAULT_THEME.background;
-              colorInputs[2].value = DEFAULT_THEME.surface;
-              colorInputs[3].value = DEFAULT_THEME.text;
-              modeGroup.querySelector('input[value="light"]').checked = true;
-              updateReadout();
-              try {
-                await api('PUT', `/api/profiles/${p.id}`, { name: nameInput.value, theme: { ...DEFAULT_THEME } });
-                await refreshState();
-                renderSettings();
-                notify('ok', t('saved'));
-              } catch (err) {
-                notifyError(err);
-              }
-            }),
+            onclick: () => updateSelection('paper'),
           })
         )
       )
@@ -1031,7 +1022,8 @@ function renderSettings() {
   const renderCats = () => {
     catBox.replaceChildren(
       ...state.settings.categories.map((cat, idx) =>
-        el('div', { class: 'form-grid' },
+        el('div', { class: 'form-grid cat-row' },
+          el('span', { class: 'cat-dot', style: `background:${colorForCategory(cat)}`, 'aria-hidden': 'true' }),
           field(t('label'), textInput(cat, (v) => (state.settings.categories[idx] = v))),
           el('button', {
             type: 'button',
@@ -1061,30 +1053,35 @@ function renderSettings() {
       el('h3', { text: t('currency') }),
       el('div', { class: 'form-grid' },
         field(t('currency'), currencyInput),
-        field(t('language'), langGroup),
-        el('button', {
-          type: 'button',
-          class: 'btn btn-primary',
-          text: t('save'),
-          onclick: (e) => withBusy(e.currentTarget, async () => {
-            try {
-              await api('PUT', '/api/settings', {
-                currencyCode: currencyInput.value.toUpperCase(),
-                language: langGroup.querySelector('input:checked')?.value ?? 'en',
-                categories: state.settings.categories.filter((c) => c.trim()),
-              });
-              await refreshState();
-              renderSettings();
-              renderMonth();
-              notify('ok', t('saved'));
-            } catch (err) {
-              notifyError(err);
-            }
-          }),
-        })
+        field(t('language'), langGroup)
       ),
       el('h3', { text: t('categories') }),
       catBox
+    ),
+    el('div', { class: 'form-grid' },
+      el('button', {
+        type: 'button',
+        class: 'btn btn-primary btn-lg',
+        text: t('save'),
+        onclick: (e) => withBusy(e.currentTarget, async () => {
+          try {
+            for (const p of profileEditors) {
+              await api('PUT', `/api/profiles/${p.id}`, { name: p.nameInput.value, theme: { preset: p.getPreset() } });
+            }
+            await api('PUT', '/api/settings', {
+              currencyCode: currencyInput.value.toUpperCase(),
+              language: langGroup.querySelector('input:checked')?.value ?? 'en',
+              categories: state.settings.categories.filter((c) => c.trim()),
+            });
+            await refreshState();
+            renderSettings();
+            renderMonth();
+            notify('ok', t('saved'));
+          } catch (err) {
+            notifyError(err);
+          }
+        }),
+      })
     )
   );
 }

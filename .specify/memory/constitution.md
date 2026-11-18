@@ -18,7 +18,7 @@ recent month.
 
 ### III. Proportional split; personal stays personal
 Every shared cost total is split by net salary share (full salaries, never pre-reduced).
-Personal obligatory costs reduce only their owner's leftover; sharing is explicit,
+Personal expenses reduce only their owner's leftover; sharing is explicit,
 item-scoped (`partnerShare%`, default 0) and never changes the shared-pot split.
 
 ### IV. Raw data is the only input
@@ -45,12 +45,14 @@ paired with a body font, contrast checked (WCAG/APCA), `prefers-reduced-motion` 
 ### VII. Single screen, fully editable, per-profile styles only
 The whole app is ONE screen: header bar, center column with the main functions (month plan,
 live figures, spending log, close), and left/right mirrored side panels with each partner's
-name + personal obligatory list. Settings / History / Leftover log open as slide-over panels
-on the same page. Every field is editable by either profile at any time while the month is
-open — profile choice is prefill convenience, never a permission. Each profile's theme is
-highly configurable from Settings (accent, background, surface, text colors + light/dark) and
-applied via CSS custom properties; layout and information stay identical for both profiles —
-styles only, never layout.
+name + personal expenses list. Settings / History / Leftover log open as slide-over panels
+on the same page and MUST fit on screen at default viewport size without scrolling (internal
+scroll only as a fallback). Every field is editable by either profile at any time while the
+month is open — profile choice is prefill convenience, never a permission. Each profile picks
+one of the predefined FULL-theme presets from Settings (paper / paper-dark / ink / contrast —
+each preset changes colors, fonts, radii, density and shadows together, dark mode included) via
+the `data-theme` attribute; layout and information stay identical for both profiles — styles
+only, never layout. Presets are pre-verified for contrast; free-form color input is not allowed.
 
 ### VIII. i18n from day one
 English UI by default with a language switch from the start; all numbers and dates via
@@ -65,8 +67,8 @@ step.
 - Every text/background pair MUST meet WCAG 2.2 AA: >= 4.5:1 for normal text, >= 3:1 for
   large text (>= 24px, or >= 18.66px bold) and for non-text UI boundaries (input borders,
   focus rings, icons) — SC 1.4.3 and 1.4.11, measured with the WCAG relative-luminance
-  formula. This applies to every design-token pair in BOTH light and dark mode, in the
-  defaults AND in any user-chosen theme.
+  formula. This applies to every design-token pair in the defaults AND in every theme preset
+  (light and dark variants included).
 - User-picked theme colors (Principle VII) are never applied raw. The theme layer MUST
   validate each pair and auto-derive safe values (adjust the text/background or clamp the
   accent) so that no selectable combination can drop below the minimums. `--accent-ink`,
@@ -81,6 +83,11 @@ step.
 - The default palette is the locked design-token set in `public/styles.css` (one base +
   1–2 accents, warm paper base, distinctive font pairing per G6). Token changes go through
   the G6 review with the measured contrast ratios of every affected pair in the PR.
+- The month view MUST make the money split obvious at a glance: a share bar (% per side of the
+  shared plan, adjustable via the salary inputs), a live coverage bar (who fronted what % of
+  actual spending vs the pot — the payer pick on each expense), per-partner leftover rows, the
+  pot balance and the settle-up line, plus the equal-%-of-own-income fairness note. Plain-
+  language labels only.
 - UI MUST scale gracefully: text resizable to 200% without loss of content or function
   (SC 1.4.4), content reflows at 320 CSS px width without two-dimensional scrolling (SC
   1.4.10), controls use `min-height` (never fixed `height`) and `rem` font sizes with the
@@ -122,10 +129,16 @@ change, a semantic version bump (MAJOR for removed/redefined principles, MINOR f
 principles/sections, PATCH for clarifications), and a change-log entry. All PRs must verify
 compliance; any complexity beyond the principles above must be justified in the PR.
 
-**Version**: 1.1.0 | **Ratified**: 2026-11-17 | **Last Amended**: 2026-11-18
+**Version**: 1.2.0 | **Ratified**: 2026-11-17 | **Last Amended**: 2026-11-18
 
 ## Change Log
 
+- **1.2.0 (2026-11-18)** — MINOR: reworked per-profile theming from free-form colors to
+  predefined full-theme presets (`data-theme`, dark mode = its own preset; fixes dark mode
+  being clobbered by inline colors). Renamed "personal obligatory" to "personal expenses".
+  Added the split-visibility requirement (share bar, live coverage bar, fairness note) and
+  the fit-on-screen rule for panels to Principles VII/X. Settings now has a single Save button;
+  expense categories are color-coded and selectable per expense.
 - **1.1.0 (2026-11-18)** — MINOR: added Principle X (Readability and working controls,
   NON-NEGOTIABLE): enforced WCAG 2.2 AA contrast on all token pairs including user-chosen
   themes, derived (never raw) theme colors with a reset-to-default, visible focus rings and

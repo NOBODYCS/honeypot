@@ -40,6 +40,7 @@ CREATE TABLE IF NOT EXISTS expenses (
   id INTEGER PRIMARY KEY,
   month_id INTEGER NOT NULL REFERENCES months(id),
   date TEXT NOT NULL,
+  category TEXT NOT NULL DEFAULT '',
   description TEXT NOT NULL,
   amount_cents INTEGER NOT NULL CHECK (amount_cents > 0),
   plan_item_id INTEGER REFERENCES plan_items(id),
@@ -56,22 +57,9 @@ CREATE TABLE IF NOT EXISTS leftover_entries (
 );
 `;
 
-export const DEFAULT_THEMES = [
-  {
-    accent: '#1f5f5b',
-    background: '#faf6ef',
-    surface: '#ffffff',
-    text: '#241c14',
-    mode: 'light',
-  },
-  {
-    accent: '#a63d2f',
-    background: '#faf6ef',
-    surface: '#ffffff',
-    text: '#241c14',
-    mode: 'light',
-  },
-];
+export const THEME_PRESETS = ['paper', 'paper-dark', 'ink', 'contrast'];
+
+export const DEFAULT_THEMES = [{ preset: 'paper' }, { preset: 'paper-dark' }];
 
 export const DEFAULT_SETTINGS = {
   currency_code: 'EUR',
@@ -87,6 +75,10 @@ export function openDb(dbPath) {
   db.exec('PRAGMA journal_mode = WAL;');
   db.exec('PRAGMA foreign_keys = ON;');
   db.exec(SCHEMA);
+  const cols = db.prepare('PRAGMA table_info(expenses)').all().map((c) => c.name);
+  if (!cols.includes('category')) {
+    db.exec("ALTER TABLE expenses ADD COLUMN category TEXT NOT NULL DEFAULT ''");
+  }
   return db;
 }
 

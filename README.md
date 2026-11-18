@@ -15,7 +15,7 @@ leftover money. Nothing rolls over — every month starts fresh.
 - After payday, each person transfers their calculated share into a shared pot; the pot pays
   all shared costs. If someone fronted a bill personally, they mark it as payer, and the close
   summary settles it — the "who owes whom" line always adds up exactly.
-- Personal obligatory costs (installments, meds, therapy) stay personal — they only reduce
+- Personal expenses (installments, meds, therapy) stay personal — they only reduce
   their owner's leftover. Optionally, any personal item can say "partner chips in X%", shown as
   its own money line ("personal support") at close, never silently changing the split.
 - Two leftover lines per person: **guaranteed** (salary − fixed share − personal costs) and
@@ -28,7 +28,7 @@ leftover money. Nothing rolls over — every month starts fresh.
 
 - **One screen, everything on it:** header (profile switch, month, panels, close), a center
   column with the month plan, live figures, and the spending log, and mirrored side panels
-  with each partner's name and personal obligatory list. Every field is editable by either
+  with each partner's name and personal expenses list. Every field is editable by either
   partner at any time.
 - Profile pick remembered per browser — a convenience, not a login (the app is LAN-only, no
   passwords, by design).
@@ -36,9 +36,9 @@ leftover money. Nothing rolls over — every month starts fresh.
   personal-support breakdown; the month locks and appears in read-only History.
 - Leftover log (most recently closed month), settings (names, themes, currency, categories,
   language).
-- **Per-profile themes, highly configurable from Settings** (accent/background/surface/text
-  colors + light/dark) via CSS custom properties — styles only, the layout is identical for
-  both partners.
+- **Per-profile theme presets** picked from Settings (paper / paper dark / ink / high contrast —
+  each preset changes colors, fonts, radii, density and shadows together) via the `data-theme`
+  attribute — styles only, the layout is identical for both partners. Dark mode is a preset.
 - English UI with a language switch; modern accessible frontend built per Google's Modern Web
   Guidance (see `.vibe/skills/modern-web-guidance`) with a deliberate, non-generic art direction.
 

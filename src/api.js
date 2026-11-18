@@ -1,4 +1,5 @@
 import { computeSummary } from './money.js';
+import { THEME_PRESETS } from './db.js';
 
 export class ApiError extends Error {
   constructor(status, message) {
@@ -23,7 +24,11 @@ function getProfiles(db) {
   return db
     .prepare('SELECT id, name, theme_json FROM profiles ORDER BY id')
     .all()
-    .map((r) => ({ id: r.id, name: r.name, theme: JSON.parse(r.theme_json) }));
+    .map((r) => {
+      const theme = JSON.parse(r.theme_json);
+      if (!THEME_PRESETS.includes(theme.preset)) theme.preset = THEME_PRESETS[0];
+      return { id: r.id, name: r.name, theme };
+    });
 }
 
 function currentYm() {
@@ -66,12 +71,13 @@ function monthPlanItems(db, monthId) {
 function monthExpenses(db, monthId) {
   return db
     .prepare(
-      'SELECT id, date, description, amount_cents, plan_item_id, payer_profile_id FROM expenses WHERE month_id = ? ORDER BY date, id'
+      'SELECT id, date, category, description, amount_cents, plan_item_id, payer_profile_id FROM expenses WHERE month_id = ? ORDER BY date, id'
     )
     .all(monthId)
     .map((r) => ({
       id: r.id,
       date: r.date,
+      category: r.category ?? '',
       description: r.description,
       amountCents: r.amount_cents,
       planItemId: r.plan_item_id,
@@ -132,6 +138,9 @@ function monthPayload(db, month) {
 function validateTheme(theme) {
   if (typeof theme !== 'object' || theme === null) {
     throw new ApiError(400, 'theme must be an object');
+  }
+  if (theme.preset !== undefined && !THEME_PRESETS.includes(theme.preset)) {
+    throw new ApiError(400, `theme.preset must be one of: ${THEME_PRESETS.join(', ')}`);
   }
   const colorRe = /^#[0-9a-fA-F]{6}$/;
   for (const key of ['accent', 'background', 'surface', 'text']) {
@@ -385,11 +394,16 @@ export function createApi(db) {
     if (body.payerProfileId != null && ![1, 2].includes(body.payerProfileId)) {
       throw new ApiError(400, 'payerProfileId must be 1 or 2');
     }
+    if (body.category != null && (typeof body.category !== 'string' || body.category.trim().length > 60)) {
+      throw new ApiError(400, 'category must be a string of at most 60 characters');
+    }
+    const category = typeof body.category === 'string' ? body.category.trim() : '';
     db.prepare(
-      'INSERT INTO expenses (month_id, date, description, amount_cents, plan_item_id, payer_profile_id) VALUES (?, ?, ?, ?, ?, ?)'
+      'INSERT INTO expenses (month_id, date, category, description, amount_cents, plan_item_id, payer_profile_id) VALUES (?, ?, ?, ?, ?, ?, ?)'
     ).run(
       month.id,
       body.date,
+      category,
       body.description.trim(),
       body.amountCents,
       planItemId,
