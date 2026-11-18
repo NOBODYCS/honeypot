@@ -44,12 +44,15 @@ leftover money. Nothing rolls over — every month starts fresh.
 
 ## Quick start (Docker Compose, Portainer)
 
-The app is a single container; the SQLite file lives on a volume, never in the repo:
+The app is a single container. CI publishes the image to the GitHub Container Registry
+(pull `ghcr.io/nobodycs/honeypot:latest`, or pin a `:sha-<commit>` tag); if the package is
+private, `docker login ghcr.io` with a `read:packages` token. The SQLite file lives on a
+volume, never in the repo:
 
 ```yaml
 services:
   honeypot:
-    image: honeypot:latest        # build from this repo
+    image: ghcr.io/nobodycs/honeypot:latest   # published by CI from this repo
     restart: unless-stopped
     ports:
       - "8080:8080"                # your nginx reverse proxy points here; LAN only
@@ -75,7 +78,7 @@ Environment: `HONEYPOT_DB_PATH` (default `/data/honeypot.db`), `PORT` (default `
 Spec-driven (GitHub Spec Kit): constitution in `.specify/memory/constitution.md`, feature docs
 in `specs/001-honeypot-app/` (app-spec, spec, research, data-model, contracts, quickstart,
 plan, tasks). Zero-dependency Node.js 22+ (`node:http` + `node:sqlite`); run with
-`node src/server.js`, test with `node --test tests/`.
+`node src/server.js`, test with `node --test`.
 
 ## Screenshots
 

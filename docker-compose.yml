@@ -1,7 +1,6 @@
 services:
   honeypot:
-    build: .
-    image: honeypot:latest
+    image: ghcr.io/nobodycs/honeypot:latest   # built by CI; :main after merge, or pin :sha-<commit>
     restart: unless-stopped
     ports:
       - "8080:8080"

@@ -26,7 +26,7 @@ reverse proxy (managed manually, TLS + local DNS + VPN-only) points at the publi
 ```yaml
 services:
   honeypot:
-    image: honeypot:latest        # build from this repo (Dockerfile at repo root)
+    image: ghcr.io/nobodycs/honeypot:latest   # published by CI from this repo; pin :sha-<commit> if you prefer
     restart: unless-stopped
     ports:
       - "8080:8080"                # nginx proxies to this; LAN only in practice
