@@ -1,0 +1,13 @@
+services:
+  honeypot:
+    image: ghcr.io/nobodycs/honeypot:latest   # built by CI; :main after merge, or pin :sha-<commit>
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      HONEYPOT_DB_PATH: /data/honeypot.db
+      PORT: "8080"
+    volumes:
+      - honeypot-data:/data
+volumes:
+  honeypot-data:
