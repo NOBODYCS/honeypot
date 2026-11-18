@@ -129,6 +129,35 @@ SC 1.4.12 (text spacing), SC 2.5.8 (target size >= 24x24 px), and Modern Web Gui
 - Layout: move the 3-column `.screen` breakpoint to a container query (or em-based media
   query) so it triggers on available space, not assumed text size.
 
+## Implementation status (2026-11-18, branch vibe/ui-readability-c3e02f)
+
+All items above implemented in `public/` + `src/db.js`:
+- `applyTheme()` now validates every pair with the WCAG luminance formula and auto-derives
+  safe values (`--accent-ink`, muted inks, lines, `--canvas`, surfaces); stale inline props
+  are cleared on profile switch. No selectable combination can drop below 4.5:1 text /
+  3:1 borders.
+- Settings: live contrast readout per profile (text/bg and accent/bg ratios with OK/too
+  low) + "Reset to default" button.
+- Dialog Close buttons fixed (`dialog` selector, all dialogs), backdrop-click closes every
+  dialog except the mandatory profile pick; month close uses an in-app Confirm dialog
+  instead of `confirm()`.
+- `.btn:focus-visible` / `.panel-close:focus-visible` outline rings added; buttons use
+  `min-height` + wrapping labels + `line-height: 1.2`; `aria-busy` loading state on all
+  async buttons (save/add/remove/create/close) prevents double submits.
+- New default palette in `styles.css` (+ dark mode) and aligned seeds in `src/db.js` —
+  every pair re-measured (see verification below). Breakpoint moved to `64em`;
+  `@media (pointer: coarse)` 44px targets; `<meta name="text-scale" content="scale">`;
+  font tokens in rem; toast wraps instead of clipping; `inputmode="decimal"` on money
+  inputs; smooth scrolling gated behind `prefers-reduced-motion: no-preference`.
+- Micro-interactions (per 2025/26 guidance: quick 90–130ms, transform+color only,
+  reduced-motion respected): button press `translateY(1px) scale(0.98)`, focus rings,
+  busy state, wrapping toast with `title`, smooth scroll.
+
+Verification: `node --check` on all JS; `npm test` 25/25; live server smoke test
+(GET /, /api/state, POST /api/months, PUT plan, GET month, PUT profile theme);
+contrast re-measured from the final stylesheet tokens (all text pairs >= 4.5:1, borders
+>= 3:1 in both modes).
+
 ## Guidelines checked against
 - WCAG 2.2 (W3C): SC 1.4.3 contrast ≥ 4.5:1 normal / 3:1 large text; SC 1.4.11 non-text
   ≥ 3:1; SC 2.4.7 visible focus; SC 2.5.8 target size ≥ 24×24px (44×44px recommended —

@@ -58,16 +58,16 @@ CREATE TABLE IF NOT EXISTS leftover_entries (
 
 export const DEFAULT_THEMES = [
   {
-    accent: '#a63d2f',
+    accent: '#1f5f5b',
     background: '#faf6ef',
-    surface: '#f1e8da',
+    surface: '#ffffff',
     text: '#241c14',
     mode: 'light',
   },
   {
-    accent: '#1f5f5b',
+    accent: '#a63d2f',
     background: '#faf6ef',
-    surface: '#f1e8da',
+    surface: '#ffffff',
     text: '#241c14',
     mode: 'light',
   },

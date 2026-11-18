@@ -88,6 +88,10 @@ const I18N = {
     balance: 'Balance',
     pot: 'Pot',
     paidByStrip: 'Paid by {name}',
+    resetTheme: 'Reset to default',
+    contrast: 'Contrast',
+    ok: 'OK',
+    low: 'too low',
   },
   pl: {
     profileLabel: 'Aktualny profil',
@@ -176,6 +180,10 @@ const I18N = {
     balance: 'Bilans',
     pot: 'Pula',
     paidByStrip: 'Zapłacił(a): {name}',
+    resetTheme: 'Przywróć domyślne',
+    contrast: 'Kontrast',
+    ok: 'OK',
+    low: 'za niski',
   },
 };
 
@@ -245,20 +253,100 @@ function fmtDate(iso) {
   return dateFormatter().format(new Date(Date.UTC(y, m - 1, d)));
 }
 
+const THEME_PROPS = [
+  '--accent', '--accent-ink', '--bg', '--canvas', '--fg', '--ink', '--ink-2', '--ink-3',
+  '--line', '--line-2', '--paper', '--surface', '--surface-1', '--surface-2',
+];
+
+const DEFAULT_THEME = { mode: 'light', accent: '#1f5f5b', background: '#faf6ef', surface: '#ffffff', text: '#241c14' };
+
+function hexRgb(hex) {
+  const c = hex.replace('#', '');
+  return [0, 2, 4].map((i) => parseInt(c.slice(i, i + 2), 16));
+}
+
+function luminance(hex) {
+  const [r, g, b] = hexRgb(hex).map((v) => {
+    v /= 255;
+    return v <= 0.04045 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
+  });
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+}
+
+function contrast(a, b) {
+  const [l1, l2] = [luminance(a), luminance(b)].sort((x, y) => y - x);
+  return (l1 + 0.05) / (l2 + 0.05);
+}
+
+function mixHex(a, b, t) {
+  const A = hexRgb(a);
+  const B = hexRgb(b);
+  return '#' + A.map((v, i) => Math.round(v * (1 - t) + B[i] * t).toString(16).padStart(2, '0')).join('');
+}
+
+function isHex(v) {
+  return typeof v === 'string' && /^#[0-9a-fA-F]{6}$/.test(v);
+}
+
+function ensureContrast(fg, refs, min) {
+  const list = Array.isArray(refs) ? refs : [refs];
+  if (list.every((r) => contrast(fg, r) >= min)) return fg;
+  for (const toward of ['#000000', '#ffffff']) {
+    let c = fg;
+    for (let i = 0; i < 25; i++) {
+      c = mixHex(c, toward, 0.08);
+      if (list.every((r) => contrast(c, r) >= min)) return c;
+    }
+  }
+  return list.every((r) => contrast('#000000', r) >= min) ? '#000000' : '#ffffff';
+}
+
+function ensureBorder(color, refs, min = 3) {
+  return ensureContrast(color, refs, min);
+}
+
+function pickAccentInk(accent) {
+  return contrast('#ffffff', accent) >= contrast('#141414', accent) ? '#ffffff' : '#141414';
+}
+
 function applyTheme(profile) {
   const theme = profile?.theme ?? {};
   const root = document.documentElement;
-  root.dataset.mode = theme.mode ?? 'light';
-  const map = {
-    '--accent': theme.accent,
-    '--bg': theme.background,
-    '--surface': theme.surface,
-    '--fg': theme.text,
-    '--ink': theme.text,
-    '--paper': theme.background,
+  for (const prop of THEME_PROPS) root.style.removeProperty(prop);
+  const dark = theme.mode === 'dark';
+  root.dataset.mode = dark ? 'dark' : 'light';
+  const bg = isHex(theme.background) ? theme.background : dark ? '#1c1811' : DEFAULT_THEME.background;
+  const surface = isHex(theme.surface) ? theme.surface : dark ? '#241f17' : DEFAULT_THEME.surface;
+  const fg = ensureContrast(isHex(theme.text) ? theme.text : dark ? '#f1e8da' : DEFAULT_THEME.text, [bg, surface], 4.5);
+  const accent = ensureContrast(isHex(theme.accent) ? theme.accent : dark ? '#7fc4bb' : DEFAULT_THEME.accent, [bg, surface], 4.5);
+  const set = {
+    '--accent': accent,
+    '--accent-ink': pickAccentInk(accent),
+    '--bg': bg,
+    '--canvas': bg,
+    '--fg': fg,
+    '--ink': fg,
+    '--ink-2': ensureContrast(mixHex(fg, bg, 0.72), [bg, surface], 4.5),
+    '--ink-3': ensureContrast(mixHex(fg, bg, 0.52), [bg, surface], 4.5),
+    '--line': mixHex(fg, surface, 0.82),
+    '--line-2': ensureBorder(mixHex(fg, surface, 0.62), [bg, surface], 3),
+    '--paper': bg,
+    '--surface': surface,
+    '--surface-1': surface,
+    '--surface-2': mixHex(surface, fg, 0.06),
   };
-  for (const [prop, value] of Object.entries(map)) {
-    if (value) root.style.setProperty(prop, value);
+  for (const [prop, value] of Object.entries(set)) root.style.setProperty(prop, value);
+}
+
+async function withBusy(btn, fn) {
+  if (!btn) return fn();
+  btn.disabled = true;
+  btn.setAttribute('aria-busy', 'true');
+  try {
+    return await fn();
+  } finally {
+    btn.disabled = false;
+    btn.removeAttribute('aria-busy');
   }
 }
 
@@ -365,6 +453,7 @@ function moneyInput(cents, oninput, { disabled = false } = {}) {
     type: 'number',
     step: '0.01',
     min: '0',
+    inputmode: 'decimal',
     'aria-label': 'amount',
     value: ((cents ?? 0) / 100).toFixed(2),
     disabled,
@@ -387,6 +476,7 @@ function notify(kind, message) {
   if (!toast) return alert(message);
   toast.dataset.kind = kind;
   toast.textContent = message;
+  toast.title = message;
   toast.hidden = false;
   clearTimeout(toastTimer);
   toastTimer = setTimeout(() => {
@@ -548,7 +638,7 @@ function renderPlan() {
         class: 'btn btn-primary',
         text: t('save'),
         disabled: !canEdit,
-        onclick: savePlan,
+        onclick: (e) => withBusy(e.currentTarget, savePlan),
       })
     )
   );
@@ -654,7 +744,7 @@ function renderExpenses() {
     const lastD2 = String(lastDay).padStart(2, '0');
     const dateInput = el('input', { type: 'date', value: `${state.month.ym}-01`, min: `${state.month.ym}-01`, max: `${state.month.ym}-${lastD2}` });
     const descInput = el('input', { type: 'text', placeholder: t('description') });
-    const amountInput = el('input', { type: 'number', step: '0.01', min: '0.01', placeholder: t('amount') });
+    const amountInput = el('input', { type: 'number', step: '0.01', min: '0.01', inputmode: 'decimal', placeholder: t('amount') });
     const itemSelect = el('select', {},
       el('option', { value: '', text: `${t('linkItem')}: ${t('unplanned')}` }),
       ...state.month.items
@@ -676,7 +766,7 @@ function renderExpenses() {
           type: 'button',
           class: 'btn btn-primary',
           text: t('addExpense'),
-          onclick: async () => {
+          onclick: (e) => withBusy(e.currentTarget, async () => {
             try {
               state.month = await api('POST', `/api/months/${state.month.ym}/expenses`, {
                 date: dateInput.value,
@@ -689,7 +779,7 @@ function renderExpenses() {
             } catch (err) {
               notifyError(err);
             }
-          },
+          }),
         })
       )
     );
@@ -733,14 +823,14 @@ function renderExpenses() {
                   type: 'button',
                   class: 'btn btn-danger',
                   text: t('remove'),
-                  onclick: async () => {
+                  onclick: (e) => withBusy(e.currentTarget, async () => {
                     try {
                       state.month = await api('DELETE', `/api/expenses/${e.id}`);
                       renderMonth();
                     } catch (err) {
                       notifyError(err);
                     }
-                  },
+                  }),
                 })
               : null
           )
@@ -818,18 +908,27 @@ function renderSummaryBody(box, snapshot, month) {
   box.replaceChildren(...parts);
 }
 
+let confirmAction = null;
+
+function showConfirm(message, action) {
+  confirmAction = action;
+  $('#dlg-confirm-msg').textContent = message;
+  $('#dlg-confirm').showModal();
+}
+
 async function closeMonth() {
   if (!state.month || state.month.status !== 'open') return;
-  if (!confirm(t('confirmClose'))) return;
-  try {
-    const closed = await api('POST', `/api/months/${state.month.ym}/close`);
-    renderSummaryBody($('#summary-body'), closed.summary, closed);
-    $('#dlg-summary').showModal();
-    await refreshState();
-    await loadMonths();
-  } catch (err) {
-    notifyError(err);
-  }
+  showConfirm(t('confirmClose'), async () => {
+    try {
+      const closed = await api('POST', `/api/months/${state.month.ym}/close`);
+      renderSummaryBody($('#summary-body'), closed.summary, closed);
+      $('#dlg-summary').showModal();
+      await refreshState();
+      await loadMonths();
+    } catch (err) {
+      notifyError(err);
+    }
+  });
 }
 
 /* ---------- settings (US6) ---------- */
@@ -851,10 +950,19 @@ function renderSettings() {
 
   for (const p of state.profiles) {
     const colorInputs = ['accent', 'background', 'surface', 'text'].map((key) =>
-      el('input', { type: 'color', value: p.theme[key] ?? '#000000', 'aria-label': t(key) })
+      el('input', { type: 'color', value: isHex(p.theme[key]) ? p.theme[key] : '#000000', 'aria-label': t(key) })
     );
     const modeGroup = segmented(`mode-${p.id}`, [['light', t('light')], ['dark', t('dark')]], p.theme.mode ?? 'light');
     const nameInput = textInput(p.name, () => {});
+    const readout = el('p', { class: 'mini-hint' });
+    const updateReadout = () => {
+      const tb = contrast(colorInputs[3].value, colorInputs[1].value);
+      const ab = contrast(colorInputs[0].value, colorInputs[1].value);
+      const mark = (r) => `${r.toFixed(1)}:1 ${r >= 4.5 ? t('ok') : t('low')}`;
+      readout.textContent = `${t('contrast')} — ${t('text')}/${t('background')}: ${mark(tb)} · ${t('accent')}: ${mark(ab)}`;
+    };
+    for (const input of colorInputs) input.addEventListener('input', updateReadout);
+    updateReadout();
     box.append(
       el('div', { class: 'stack' },
         el('h3', { text: p.name }),
@@ -870,25 +978,49 @@ function renderSettings() {
           ),
           field(t('mode'), modeGroup)
         ),
-        el('button', {
-          type: 'button',
-          class: 'btn btn-primary',
-          text: t('save'),
-          onclick: async () => {
-            const theme = { mode: modeGroup.querySelector('input:checked')?.value ?? 'light' };
-            ['accent', 'background', 'surface', 'text'].forEach((key, i) => {
-              theme[key] = colorInputs[i].value;
-            });
-            try {
-              await api('PUT', `/api/profiles/${p.id}`, { name: nameInput.value, theme });
-              await refreshState();
-              renderSettings();
-              notify('ok', t('saved'));
-            } catch (err) {
-              notifyError(err);
-            }
-          },
-        })
+        readout,
+        el('div', { class: 'form-grid' },
+          el('button', {
+            type: 'button',
+            class: 'btn btn-primary',
+            text: t('save'),
+            onclick: (e) => withBusy(e.currentTarget, async () => {
+              const theme = { mode: modeGroup.querySelector('input:checked')?.value ?? 'light' };
+              ['accent', 'background', 'surface', 'text'].forEach((key, i) => {
+                theme[key] = colorInputs[i].value;
+              });
+              try {
+                await api('PUT', `/api/profiles/${p.id}`, { name: nameInput.value, theme });
+                await refreshState();
+                renderSettings();
+                notify('ok', t('saved'));
+              } catch (err) {
+                notifyError(err);
+              }
+            }),
+          }),
+          el('button', {
+            type: 'button',
+            class: 'btn',
+            text: t('resetTheme'),
+            onclick: (e) => withBusy(e.currentTarget, async () => {
+              colorInputs[0].value = DEFAULT_THEME.accent;
+              colorInputs[1].value = DEFAULT_THEME.background;
+              colorInputs[2].value = DEFAULT_THEME.surface;
+              colorInputs[3].value = DEFAULT_THEME.text;
+              modeGroup.querySelector('input[value="light"]').checked = true;
+              updateReadout();
+              try {
+                await api('PUT', `/api/profiles/${p.id}`, { name: nameInput.value, theme: { ...DEFAULT_THEME } });
+                await refreshState();
+                renderSettings();
+                notify('ok', t('saved'));
+              } catch (err) {
+                notifyError(err);
+              }
+            }),
+          })
+        )
       )
     );
   }
@@ -934,7 +1066,7 @@ function renderSettings() {
           type: 'button',
           class: 'btn btn-primary',
           text: t('save'),
-          onclick: async () => {
+          onclick: (e) => withBusy(e.currentTarget, async () => {
             try {
               await api('PUT', '/api/settings', {
                 currencyCode: currencyInput.value.toUpperCase(),
@@ -948,7 +1080,7 @@ function renderSettings() {
             } catch (err) {
               notifyError(err);
             }
-          },
+          }),
         })
       ),
       el('h3', { text: t('categories') }),
@@ -976,7 +1108,7 @@ async function renderLeftovers(historyData) {
     }
   }
   const editableMonth = ym === state.mostRecentClosedYm;
-  const amountInput = el('input', { type: 'number', step: '0.01', min: '0.01', placeholder: t('amount') });
+  const amountInput = el('input', { type: 'number', step: '0.01', min: '0.01', inputmode: 'decimal', placeholder: t('amount') });
   const noteInput = el('input', { type: 'text', placeholder: t('note') });
   const profileSelect = el('select', {},
     ...state.profiles.map((p) => el('option', { value: p.id, text: p.name }))
@@ -996,7 +1128,7 @@ async function renderLeftovers(historyData) {
             type: 'button',
             class: 'btn btn-primary',
             text: t('addEntry'),
-            onclick: async () => {
+            onclick: (e) => withBusy(e.currentTarget, async () => {
               try {
                 const { leftovers } = await api('POST', `/api/months/${ym}/leftovers`, {
                   profileId: Number(profileSelect.value),
@@ -1008,7 +1140,7 @@ async function renderLeftovers(historyData) {
               } catch (err) {
                 notifyError(err);
               }
-            },
+            }),
           })
         )
       : null,
@@ -1026,14 +1158,14 @@ async function renderLeftovers(historyData) {
                   type: 'button',
                   class: 'btn btn-danger',
                   text: t('remove'),
-                  onclick: async () => {
+                  onclick: (e) => withBusy(e.currentTarget, async () => {
                     try {
                       const { leftovers } = await api('DELETE', `/api/leftovers/${entry.id}`);
                       renderLeftovers({ ...data, leftovers });
                     } catch (err) {
                       notifyError(err);
                     }
-                  },
+                  }),
                 })
               : null
           )
@@ -1077,10 +1209,23 @@ function showErrorMessage(err) {
 async function init() {
   $('#profile-switch').addEventListener('change', (e) => setProfile(Number(e.target.value)));
   $('#month-switch').addEventListener('change', (e) => e.target.value && loadMonth(e.target.value));
-  for (const dialog of document.querySelectorAll('dialog.panel')) {
+  for (const dialog of document.querySelectorAll('dialog')) {
     dialog.querySelector('.panel-close')?.addEventListener('click', () => dialog.close());
+    dialog.addEventListener('click', (e) => {
+      if (e.target === dialog && dialog.id !== 'dlg-pick') dialog.close();
+    });
   }
-  $('#btn-create-month').addEventListener('click', async () => {
+  $('#dlg-confirm-cancel').addEventListener('click', () => {
+    confirmAction = null;
+    $('#dlg-confirm').close();
+  });
+  $('#dlg-confirm-ok').addEventListener('click', async (e) => {
+    const action = confirmAction;
+    confirmAction = null;
+    $('#dlg-confirm').close();
+    if (action) await withBusy(e.currentTarget, action);
+  });
+  $('#btn-create-month').addEventListener('click', (e) => withBusy(e.currentTarget, async () => {
     try {
       state.month = await api('POST', '/api/months', { ym: state.currentYm });
       await refreshState();
@@ -1088,7 +1233,7 @@ async function init() {
     } catch (err) {
       showErrorMessage(err);
     }
-  });
+  }));
   $('#btn-close-month').addEventListener('click', closeMonth);
   $('#btn-settings').addEventListener('click', () => {
     renderSettings();

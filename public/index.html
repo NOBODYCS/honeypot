@@ -3,6 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="text-scale" content="scale">
   <title>Honeypot — two-person shared budget planner</title>
   <meta name="description" content="Honeypot: a two-person shared budget planner. Plan a month, track shared spending, close with a settle-up.">
   <meta name="color-scheme" content="light dark">
@@ -132,6 +133,18 @@
       <button type="button" class="panel-close" data-i18n="close">Close</button>
     </div>
     <div id="summary-body"></div>
+  </dialog>
+
+  <dialog id="dlg-confirm" class="dialog dialog-center" aria-labelledby="dlg-confirm-title">
+    <div class="panel-head">
+      <h2 id="dlg-confirm-title" data-i18n="confirm">Confirm</h2>
+      <button type="button" class="panel-close" data-i18n="close">Close</button>
+    </div>
+    <p id="dlg-confirm-msg" class="hint"></p>
+    <div class="pick-buttons">
+      <button type="button" class="btn" id="dlg-confirm-cancel" data-i18n="cancel">Cancel</button>
+      <button type="button" class="btn btn-primary" id="dlg-confirm-ok" data-i18n="confirm">Confirm</button>
+    </div>
   </dialog>
 </body>
 </html>
