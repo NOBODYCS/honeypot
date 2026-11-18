@@ -25,7 +25,7 @@ via `Intl.NumberFormat` client-side with the configured ISO 4217 code. Errors:
 - `PUT /api/months/:ym/plan` — `{ salaries: {profileId: cents}, items: [...] }`; 409 when
   closed (R9). Every field editable by either profile while open (FR-003).
 - `POST /api/months/:ym/close` — closes the month; computes and freezes `summary_json`
-  (R8 settle-up, R12 personal support, pot balance, leftovers); locks plan + expenses (R9)
+  (R8 settle-up, R12 personal support, leftovers after shared/personal costs); locks plan + expenses (R9)
 
 ## Expenses (open month only)
 
@@ -43,5 +43,5 @@ via `Intl.NumberFormat` client-side with the configured ISO 4217 code. Errors:
 ## Derived computations (server-side, from raw inputs only — R16)
 
 `GET /api/months/:ym/summary` → `{ combinedIncome, shares, sharedPlannedTotal,
-contributions, guaranteedLeft, plannedLeft, projectedLeft, actualSpent, potBalance,
+contributions, leftAfterShared, leftAfterPersonal, actualSpent,
 settle: {A,B} | null, personalSupport: [...], planVsActual: [...] }` — all integer cents.

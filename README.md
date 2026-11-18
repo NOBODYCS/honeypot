@@ -10,18 +10,20 @@ leftover money. Nothing rolls over — every month starts fresh.
 
 ## The money model
 
-- Shared costs (fixed like rent/utilities + variable like groceries) are split by salary
-  share: `share(P) = salary(P) / (salaryA + salaryB)`. Each shared item can also override the
-  split per cost (its own A%/B%, kept in sync to 100; blank = salary split).
-- After payday, each person transfers their calculated share into a shared pot; the pot pays
-  all shared costs. If someone fronted a bill personally, they mark it as payer, and the close
-  summary settles it — the "who owes whom" line always adds up exactly.
+- There is no shared pot: each person pays their share of the shared costs from their own
+  salary, fairly — the same % of their own salary. Shared costs (fixed like rent/utilities +
+  variable like groceries) are split by salary share: `share(P) = salary(P) / (salaryA + salaryB)`.
+  Each shared item can also override the split per cost (its own A%/B%, kept in sync to 100;
+  blank = salary split).
+- If someone fronted a bill personally, they mark it as payer; the settle-up is the balance
+  equation over the **sum** of all fronted amounts — whoever chipped in more gets paid back,
+  and an even balance says so. The two settle lines always add up exactly.
 - Personal expenses (installments, meds, therapy) stay personal — they only reduce
   their owner's leftover. Optionally, any personal item can say "partner chips in X%", shown as
   its own money line ("personal support") at close, never silently changing the split.
-- Two leftover lines per person: **guaranteed** (salary − fixed share − personal costs) and
-  **planned** (guaranteed − planned variable share), plus a **projected** line that updates as
-  actual spending is logged.
+- Two leftover lines per person, both their own money: **after shared costs** (salary − fixed
+  share − share of spending so far, live) and **after personal costs** (that minus personal
+  spending).
 - All amounts are integer cents; splits always sum exactly. Full rules: R1–R16 in
   `specs/001-honeypot-app/app-spec.md`.
 
@@ -34,8 +36,9 @@ leftover money. Nothing rolls over — every month starts fresh.
   expenses can be edited in place or deleted (with a confirm).
 - Profile pick remembered per browser — a convenience, not a login (the app is LAN-only, no
   passwords, by design).
-- Month close: contributions vs actually paid, leftovers, pot balance, settle-up line, and the
-  personal-support breakdown; the month locks and appears in read-only History.
+- Month close: contributions vs actually paid, leftovers after shared/personal costs, the
+  settle-up balance line, and the personal-support breakdown; the month locks and appears in
+  read-only History.
 - Leftover log (most recently closed month), settings in labeled sections — Your profile
   (name, theme presets, light/dark — per profile only), App (currency, language), Expense
   categories — with a single Save button.

@@ -272,8 +272,8 @@ test('tooltips: every field-label i18n key has a matching tip<Key> key in BOTH e
     'settings', 'history', 'leftoverLog', 'closeMonth', 'newMonth', 'createMonth',
     'noMonthTitle', 'noMonthText', 'noItems', 'noExpenses', 'nothingYet', 'historyEmpty',
     'noLeftoverMonth', 'open', 'closed', 'balance',
-    'transferAfterPayday', 'guaranteedLeft', 'plannedLeft', 'projectedLeft', 'potBalance',
-    'settleUp', 'ofIncome', 'splitOfPlan', 'coversSpending', 'fairIncome',
+    'transferAfterPayday', 'leftAfterShared', 'leftAfterPersonal',
+    'settleUp', 'ofIncome', 'splitOfPlan', 'fairIncome',
     'editHint', 'readOnly', 'monthClosed', 'contributions', 'paid', 'whoAreYou',
   ];
   for (const k of labelKeys) {
@@ -314,8 +314,8 @@ test('suggestions: UI cannot silently disappear (chips, apply-all, tips in en+pl
 test('tooltips: every live-figure caption key has a matching tooltip key in BOTH en and pl, with live-example placeholders', () => {
   const { en, pl } = i18n();
   const figureKeys = [
-    'transferAfterPayday', 'ofIncome', 'guaranteedLeft', 'plannedLeft', 'projectedLeft',
-    'potBalance', 'settleUp', 'splitOfPlan', 'coversSpending', 'fairIncome', 'contributions', 'paid',
+    'transferAfterPayday', 'ofIncome', 'leftAfterShared', 'leftAfterPersonal',
+    'settleUp', 'splitOfPlan', 'fairIncome', 'contributions', 'paid',
   ];
   for (const k of figureKeys) {
     const tipKey = `tip${k[0].toUpperCase()}${k.slice(1)}`;
@@ -326,7 +326,32 @@ test('tooltips: every live-figure caption key has a matching tooltip key in BOTH
   }
   /* live figures must actually feed the params (not static text) */
   assert.ok(app.includes('function figTipParams'), 'figure tooltips must compute live example params');
-  assert.ok(app.includes("figRow('potBalance'") && app.includes("tipWrap('splitOfPlan', 'tipSplitOfPlan', {"), 'figures must pass live params to their tips');
+  assert.ok(app.includes("figRow('leftAfterShared'") && app.includes("tipWrap('splitOfPlan', 'tipSplitOfPlan', {"), 'figures must pass live params to their tips');
+});
+
+/* ---------- no-pot model rework (2.0) ---------- */
+
+test('no-pot model: pot balance, coverage bar and old leftover figures are gone everywhere', () => {
+  assert.ok(!money.includes('potBalance') && !money.includes('potReturn'), 'money.js must not compute a pot balance');
+  assert.ok(!app.includes('potBalance') && !app.includes('coversSpending'), 'app.js must not render pot balance / coverage bar');
+  for (const old of ['guaranteedLeft', 'plannedLeft', 'projectedLeft']) {
+    assert.ok(!app.includes(`figRow('${old}'`) && !app.includes(`tipWrap('${old}'`), `old figure ${old} must not be rendered (legacy snapshot fallback only)`);
+  }
+  assert.ok(money.includes('leftAfterShared') && money.includes('leftAfterPersonal'), 'new leftover figures missing in money.js');
+  assert.ok(app.includes('leftAfterShared') && app.includes('leftAfterPersonal'), 'new leftover figures missing in app.js');
+  const { en, pl } = i18n();
+  for (const k of ['leftAfterShared', 'leftAfterPersonal', 'tipLeftAfterShared', 'tipLeftAfterPersonal', 'settleEven', 'settleLine']) {
+    assert.ok(k in en && k in pl, `no-pot key ${k} missing in en/pl`);
+  }
+  assert.ok(!('potBalance' in en) && !('coversSpending' in en) && !('guaranteedLeft' in en), 'old keys must be removed from i18n');
+  /* settle-up is the summed balance equation, phrased as chipped-in, and says so when even */
+  assert.ok(/chipped in/.test(en.settleLine) && /do\u0142o\u017cy\u0142/.test(pl.settleLine), 'settle line must use the chipped-in balance phrasing');
+  assert.ok(app.includes("t('settleEven')"), 'equal balance must say so explicitly');
+  /* no pot wording left in user-facing strings */
+  for (const k of Object.keys(en)) {
+    assert.ok(!/\bpot\b/i.test(String(en[k])), `en key ${k} still mentions pot`);
+    assert.ok(!/\bpula\b|\bpuli\b/i.test(String(pl[k])), `pl key ${k} still mentions pot (pula)`);
+  }
 });
 
 /* ---------- round 7 guards: audit fixes ---------- */

@@ -19,11 +19,13 @@ recent month.
 ### III. Proportional split; personal stays personal
 Every shared cost total is split by net salary share (full salaries, never pre-reduced).
 Personal expenses reduce only their owner's leftover; sharing is explicit,
-item-scoped (`partnerShare%`, default 0) and never changes the shared-pot split.
+item-scoped (`partnerShare%`, default 0) and never changes the shared-cost split.
 
 ### IV. Raw data is the only input
-Derived values (shares, contributions, leftovers, plan-vs-actual, pot balance, settle-up) are
-computed from raw inputs on every calculation. They may be persisted only as a frozen snapshot
+Derived values (shares, contributions, leftovers after shared/personal costs, plan-vs-actual,
+settle-up) are computed from raw inputs on every calculation. There is NO shared pot: partners
+pay shared costs from their own salaries, fairly (equal % of own salary); leftovers are each
+partner's own money (model v2.0, see app-spec R5–R8). They may be persisted only as a frozen snapshot
 of a closed month or as a display cache — never read back into other calculations.
 
 ### V. Trust, not security
@@ -102,10 +104,11 @@ step.
   % -of-own-income update immediately.
 - The month view MUST make the money split obvious at a glance: a share bar (% per side of the
   shared plan, adjustable via the salary inputs), a live coverage bar (who fronted what % of
-  actual spending vs the pot — the payer pick on each expense), per-partner leftover rows, the
-  pot balance and the settle-up line, plus the equal-%-of-own-income fairness note. Fair share
+  who fronted each expense — the payer pick on each expense), per-partner leftover rows
+  (after shared costs, after personal costs), the settle-up balance line, plus the
+  equal-%-of-own-income fairness note. Fair share
   is DEFINED as an equal % of each partner's own income; the UI must say what every % means
-  (share of the shared plan, not of the pot) via plain-language labels and small hover/focus
+  (share of the shared plan) via plain-language labels and delayed tooltips
   info tips — explicit, never in-your-face. Each partner's info lives on their own side
   (color-coded: side A = accent, side B = accent-2), never mixed.
 - UI MUST scale gracefully: text resizable to 200% without loss of content or function
@@ -199,10 +202,19 @@ change, a semantic version bump (MAJOR for removed/redefined principles, MINOR f
 principles/sections, PATCH for clarifications), and a change-log entry. All PRs must verify
 compliance; any complexity beyond the principles above must be justified in the PR.
 
-**Version**: 1.12.0 | **Ratified**: 2026-11-17 | **Last Amended**: 2026-11-18
+**Version**: 2.0.0 | **Ratified**: 2026-11-17 | **Last Amended**: 2026-11-18
 
 ## Change Log
 
+- **2.0.0 (2026-11-18)** — MAJOR: no-pot model rework (owner decision). The shared pot is gone:
+  partners pay shared costs from their own salaries, fairly (equal % of own salary); leftovers
+  are each partner's own money. Removed: pot balance figure, pot return, the coverage bar
+  ("who paid so far"), and the guaranteed/planned/projected leftover figures. New leftover
+  figures: after shared costs (live) and after personal costs (app-spec R5/R6; R7 reserved).
+  Settle-up is the balance equation over the SUM of all fronted amounts and is phrased as
+  "X chipped in Y more — Z pays it back"; an even balance says so explicitly. Payer-less
+  expenses = split by share, each paying their own part. History snapshots from before 2.0
+  render with a legacy fallback. 68/68 tests pass.
 - **1.12.0 (2026-11-18)** — MINOR: fair-share split suggestions (advisory only). Shared
   fixed/variable items with an empty (auto) split get a suggestion chip with one-click apply,
   plus one "apply all" action in the plan section; suggestions recompute live on every draft
@@ -234,8 +246,7 @@ compliance; any complexity beyond the principles above must be justified in the 
   `K` → `tip<Capitalized(K)>` in en+pl enforced by ui-static tests (57/57 pass). Visible
   labels reworded per owner wording (contribution to shared costs, % of shared costs,
   paid so far by whom, left of shared plan, settle-up as a who-pays-whom sentence, partner
-  chip-in labeled with the partner's name). NOTE: the pot model wording is intentionally kept
-  for now — a no-pot rework is agreed as a later step, not yet implemented.
+  chip-in labeled with the partner's name).
 - **1.8.0 (2026-11-18)** — MINOR: external-audit fixes. Plan PUT no longer FK-500s after an
   expense is linked (id-preserving upsert + orphan links); autosave flushes before month
   switch/close and reports skipped rows; "New month" header button + next-free-ym creation so a
@@ -272,7 +283,7 @@ compliance; any complexity beyond the principles above must be justified in the 
   "ISO 4217" removed from the currency label.
 - **1.3.0 (2026-11-18)** — MINOR: six preset families (paper/ink/sunrise/berry/ocean/
   contrast), each with light + dark mode. Split semantics made explicit in the UI: share bar =
-  % of the shared plan by salary (not of the pot), fairness = equal % of own income, hover/focus
+  % of the shared plan by salary, fairness = equal % of own income, hover/focus
   info tips on the figures, per-partner sides color-coded (accent / accent-2).
 - **1.2.0 (2026-11-18)** — MINOR: reworked per-profile theming from free-form colors to
   predefined full-theme presets (`data-theme`, dark mode = its own preset; fixes dark mode

@@ -9,16 +9,22 @@ This document follows anonymization rules A1–A5 and is safe to store in the pu
 - 2026-11-18: figure explanations are user-facing product behavior — every live figure and
   close/history figure carries a plain caption plus a tooltip with a worked example computed
   from live numbers (see constitution Principle X / 1.10.0). Wording must stay aligned with
-  R1–R16 (fixed costs auto-paid by the pot, pot pays pot-paid expenses).
+  R1–R16 (no-pot model: each partner pays their share from their own salary; fixed costs are assumed paid).
+- 2026-11-18 (2.0, model rework per owner): removed the shared-pot model. R5/R6 now define the
+  two leftover figures (after shared costs, after personal costs — both own money); R7 reserved;
+  R8 rewritten as the no-pot model with the settle-up as the summed balance equation and an
+  explicit "even" state. The coverage bar (who paid so far) and the pot balance figure are
+  removed from the UI, summary and history.
 - 2026-11-18 (R17, advisory only): the app may SUGGEST per-item splits for shared costs so both
   partners end up contributing the same % of their own salary (suggestFairSplit in money.js).
   Suggestions are never applied silently, never on load, never to items with a manual %;
-  applying them writes ordinary editable partnerSharePct values. They never change the pot
-  model or close math (R1–R16 unchanged).
+  applying them writes ordinary editable partnerSharePct values. They never change the
+  money model or close math (R1–R16 unchanged).
 
-- Cash flow made explicit: shared-pot model (R8 amended). Expenses without a payer are
-  pot-paid and split by share; only payer-tagged ("fronted") expenses produce a settle-up
-  line, and settle-up lines always sum to zero.
+- Cash flow made explicit (R8): no shared pot — each partner pays their share from their own
+  salary. Expenses without a payer are split by share (each paid their own part); only
+  payer-tagged ("fronted") expenses produce a settle-up line, and settle-up lines always sum
+  to zero. (Superseded by the 2026-11-18 2.0 rework, kept for history.)
 - Money stored as integer minor units (cents); every split assigns the remainder so the two
   shares sum exactly (new R15).
 - Derived values may be stored only as a frozen close snapshot or display cache, never read
@@ -113,8 +119,8 @@ Every field on the screen is fillable and editable by **either** partner at any 
 month is open (3.3). Personal lists sit in the side panels; everything shared sits in the
 center. Fixed costs are never expense entries; a fixed-cost variance is logged as an unplanned
 expense. Closing a month shows the summary (each person's proportional contribution vs what
-they actually paid, guaranteed / planned / actual leftover, pot balance, one-line settle-up
-only if at least one expense has a payer, and the "personal support" section listing every
+they actually paid, leftover after shared costs and after personal costs, the settle-up
+balance line (or an explicit "even"), and the "personal support" section listing every
 shared personal item in money), locks plan and expenses, and stores a frozen summary snapshot
 for History. The Leftover log panel is editable only for the **most recently closed** month
 (entries: amount, category, free note, per profile). History lists closed months newest
@@ -127,17 +133,20 @@ currency (ISO 4217 code), expense categories (editable list), and UI language.
 - R2 `share(P) = salary(P) / combinedIncome`
 - R3 `sharedPlannedTotal = fixedTotal + variablePlannedTotal`
 - R4 `contribution(P) = sharedPlannedTotal × share(P)` (the "transfer after payday")
-- R5 `guaranteedLeft(P) = salary(P) − fixedTotal × share(P) − personalOut(P)`
-- R6 `plannedLeft(P) = guaranteedLeft(P) − variablePlannedTotal × share(P)`
-- R7 `actualSpent = Σ expenses`; `projectedLeft(P) = salary(P) − (fixedTotal + actualSpent) × share(P) − personalOut(P)`
-- R8 **Pot model.** After payday each person transfers `contribution(P)` (R4) into the shared
-  pot; the pot pays all shared costs. An expense with no payer = paid from the pot. An expense
-  with a payer = fronted by that person from personal money. `fronted(P) = Σ expenses with
-  payer = P`; `settle(P) = fronted(P) − share(P) × Σ fronted` — positive: owed money,
-  negative: owes; the two settle lines always sum to zero. If no expense has a payer, the
-  settle-up line is not shown. Pot balance at close = `sharedPlannedTotal − fixedTotal − Σ
-  pot-paid expenses`; it is returned to each person by `share(P)` at close (P1: nothing
-  carries over).
+- R5 `actualSpent = Σ expenses`; `leftAfterShared(P) = salary(P) − fixedShare(P) − share(P) × actualSpent`
+  — the live leftover **after shared costs** (fixed costs are assumed paid; logged expenses count
+  as spent). It is each partner's own money.
+- R6 `leftAfterPersonal(P) = leftAfterShared(P) − personalOut(P)` — the leftover **after
+  personal costs too**; also the partner's own money.
+- R7 (reserved; the old guaranteed/planned/projected leftover figures were removed in 2.0)
+- R8 **No-pot model.** There is no shared pot: each partner pays their share of shared costs
+  from their own salary (`contribution(P)`, R4). An expense with no payer = split by share,
+  each paying their own part directly (no settle-up line). An expense with a payer = fronted by
+  that partner from personal money. `fronted(P) = Σ expenses with payer = P`;
+  `settle(P) = fronted(P) − share(P) × Σ fronted` — the balance equation over the **sum** of all
+  fronted amounts: positive = chipped in more, gets paid back; negative: owes. The two settle
+  lines always sum to zero. If the balance is even (including: no expense has a payer), the UI
+  says so explicitly instead of showing a line.
 - R9 Month statuses: `open → closed`. Closed = read-only except the leftover log (most
   recently closed month only).
 - R10 Months are keyed by calendar year-month (`YYYY-MM`, unique). The current month is
@@ -156,7 +165,7 @@ currency (ISO 4217 code), expense categories (editable list), and UI language.
   contribution(A)`) so the two shares always sum exactly to the total. Display via
   `Intl.NumberFormat` with the configured ISO 4217 currency code, 2 fraction digits.
 - R16 **Derived data is never an input.** Shares, contributions, leftovers, plan-vs-actual,
-  pot balance, and settle-up are always computed from raw inputs (salaries, plan items,
+  leftovers, and settle-up are always computed from raw inputs (salaries, plan items,
   expenses, settings) for any calculation. They may be persisted only as a frozen snapshot of
   a closed month (for history display) or as a display cache, and must never be read as
   inputs to other calculations.

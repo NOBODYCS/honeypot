@@ -34,19 +34,18 @@ const I18N = {
     saved: "Saved.",
     saving: "Saving…",
     transferAfterPayday: 'Contribution to shared costs',
-    guaranteedLeft: 'For sure',
-    plannedLeft: 'After plan',
-    projectedLeft: 'So far',
-    potBalance: 'Left of shared plan',
+    leftAfterShared: 'After shared costs',
+    leftAfterPersonal: 'After personal costs',
     settleUp: 'Between you two',
-    settleLine: 'This month {from} pays {to} {amount}.',
+    settleLine: '{from} chipped in {amount} more this month — {to} pays it back.',
+    settleEven: 'Even — nothing to settle',
     unplanned: 'Unplanned',
     planned: 'Planned',
     actual: 'Actual',
     date: 'Date',
     description: 'Description',
     payer: "Paid by",
-    potPaid: "Pot (no individual payer)",
+    potPaid: 'Split by share (no one fronted)',
     linkItem: 'Planned item',
     none: '\u2014',
     addExpense: 'Add expense',
@@ -78,7 +77,7 @@ const I18N = {
     noExpenses: 'No spending logged yet.',
     nothingYet: 'Nothing here yet.',
     balance: 'Balance',
-    pot: 'Pot',
+    pot: 'Each paid their share',
     paidByStrip: 'Paid by {name}',
     resetTheme: 'Reset to default',
     presetPaper: 'Paper',
@@ -93,7 +92,6 @@ const I18N = {
     centerAria: 'Month plan and spending',
     splitOfPlan: '% of shared costs',
     ofPlan: "of shared costs",
-    coversSpending: 'Paid so far, by whom',
     ofIncome: '% of own salary',
     fairIncome: "Fair share = equal % of own salary — both pay {pct}%",
     splitLabel: 'Split',
@@ -134,7 +132,7 @@ const I18N = {
     tipCategory: 'Category of the expense, from the list managed in Settings.',
     tipDescription: 'What the expense was for.',
     tipLinkItem: 'Which planned variable item this expense belongs to, or unplanned.',
-    tipPayer: 'Who actually paid: a partner (fronted personally, settled at close) or the shared plan (no individual payer).',
+    tipPayer: 'Who actually paid: a partner (fronted personally, settled at close) or no one — split by share, each paying their own part.',
     tipProfile: 'Which partner this leftover entry belongs to.',
     tipNote: 'Free-text note for this entry.',
     tipCurrency: 'Three-letter currency code used for all amounts, e.g. EUR or PLN.',
@@ -160,15 +158,12 @@ const I18N = {
     tipOpen: 'This month is open — the plan and expenses are editable.',
     tipClosed: 'This month is closed — read-only, except the leftover log of the most recent closed month.',
     tipBalance: 'Net amount to settle between the two partners from personally fronted expenses: who pays whom at close.',
-    tipTransferAfterPayday: '{name}’s part of the shared costs this month: the salary-based share of the whole shared plan (an item with a custom % overrides it for that item). Worked with your numbers: salary {salary} of {combined} combined income, shared plan {plan} → contribution {amount}.',
-    tipGuaranteedLeft: 'Money {name} keeps no matter what: salary minus fixed-cost share minus personal costs. Your numbers: {salary} − {fixed} − {personal} = {left}.',
-    tipPlannedLeft: 'Guaranteed leftover minus the planned share of variable shared costs. Your numbers: {prev} − {var} = {left}.',
-    tipProjectedLeft: 'Leftover if spending stays as logged so far: salary minus fixed share minus actual expenses minus personal costs. Your numbers: {salary} − {fixed} − {spent} − {personal} = {left}.',
-    tipPotBalance: 'What remains of the shared plan: fixed costs are assumed paid automatically, plan-paid expenses are paid from it. Your numbers: plan {plan} − fixed {fixed} − plan-paid spending {potpaid} = {balance}. At close it is returned to each partner by salary share.',
-    tipSettleUp: 'Expenses fronted personally are evened out at close so they end up split by salary share. This month: {from} pays {to} {amount}.',
+    tipTransferAfterPayday: '{name}’s part of the shared costs this month, paid from their own salary: the salary-based share of the whole shared plan (an item with a custom % overrides it for that item). Worked with your numbers: salary {salary} of {combined} combined income, shared plan {plan} → contribution {amount}.',
+    tipLeftAfterShared: 'What {name} has left after shared costs, live: salary minus fixed-cost share minus share of spending logged so far. Your numbers: {salary} − {fixed} − {spent} = {left}.',
+    tipLeftAfterPersonal: 'What {name} has left after personal costs too: left after shared costs minus personal spending. Your numbers: {prev} − {personal} = {left}.',
+    tipSettleUp: 'The balance equation over the sum of what each partner fronted personally: the one who chipped in more gets paid back by the other. This month: {from} chipped in {amount} more — {to} pays it back.',
     tipOfIncome: 'Contribution as a % of {name}’s own salary: {amount} of {salary} = {pct}%. When both partners’ percentages are equal, the split is fair.',
     tipSplitOfPlan: 'Planned split of the shared plan: {a} {ca}% and {b} {cb}% of the {plan} plan — by salary ({sa} / {sb}) unless an item has a custom %. This bar measures the plan, not who actually paid.',
-    tipCoversSpending: 'Of the {spent} actually spent so far, who paid: {a} fronted {fa}%, {b} fronted {fb}%, the shared plan paid {fp}%. This bar measures real payments, unlike the plan bar above.',
     tipFairIncome: 'Fair means both partners contribute the same % of their own salary to shared costs. Right now: {a} {ia}%, {b} {ib}%.',
     tipEditHint: 'The leftover log is editable only for the most recently closed month.',
     tipReadOnly: 'Older closed months are read-only.',
@@ -213,19 +208,18 @@ const I18N = {
     saved: 'Zapisano.',
     saving: "Zapisywanie…",
     transferAfterPayday: 'Udzia\u0142 we wsp\u00f3lnych wydatkach',
-    guaranteedLeft: 'Na pewno',
-    plannedLeft: 'Po planie',
-    projectedLeft: 'Dot\u0105d',
-    potBalance: 'Pozosta\u0142o z planu',
+    leftAfterShared: 'Po kosztach wsp\u00f3lnych',
+    leftAfterPersonal: 'Po kosztach osobistych',
     settleUp: 'Mi\u0119dzy wami',
-    settleLine: 'W tym miesi\u0105cu {from} p\u0142aci {to} {amount}.',
+    settleLine: '{from} do\u0142o\u017cy\u0142(a) si\u0119 o {amount} bardziej w tym miesi\u0105cu — {to} oddaje.',
+    settleEven: 'R\u00f3wno — nie ma czego rozlicza\u0107',
     unplanned: 'Pozaplanowe',
     planned: 'Planowane',
     actual: 'Rzeczywiste',
     date: 'Data',
     description: 'Opis',
     payer: "Kto zapłacił",
-    potPaid: 'Pula (bez p\u0142atnika)',
+    potPaid: 'Podział wg udziału (nikt nie dokładał)',
     linkItem: 'Zaplanowana pozycja',
     none: '\u2014',
     addExpense: 'Dodaj wydatek',
@@ -257,7 +251,7 @@ const I18N = {
     noExpenses: 'Nie zapisano jeszcze \u017cadnych wydatk\u00f3w.',
     nothingYet: 'Jeszcze nic tu nie ma.',
     balance: 'Bilans',
-    pot: 'Pula',
+    pot: 'Każdy swoją część',
     paidByStrip: 'Zapłacił(a): {name}',
     resetTheme: 'Przywróć domyślne',
     presetPaper: 'Papier',
@@ -272,7 +266,6 @@ const I18N = {
     centerAria: "Plan miesiąca i wydatki",
     splitOfPlan: '% wspólnych kosztów',
     ofPlan: "kosztów wspólnych",
-    coversSpending: 'Kto już zapłacił',
     ofIncome: '% własnej pensji',
     fairIncome: "Uczciwy podział = równy % pensji — obie strony płacą po {pct}%",
     splitLabel: 'Podział',
@@ -313,7 +306,7 @@ const I18N = {
     tipCategory: 'Kategoria wydatku z listy zarządzanej w Ustawieniach.',
     tipDescription: 'Na co był ten wydatek.',
     tipLinkItem: 'Do której zaplanowanej pozycji zmiennej należy ten wydatek — albo pozaplanowy.',
-    tipPayer: 'Kto faktycznie zapłacił: osoba (zapłacone z własnej kieszeni, rozliczane przy zamknięciu) albo plan wspólny (bez indywidualnego płatnika).',
+    tipPayer: 'Kto faktycznie zapłacił: osoba (zapłacone z własnej kieszeni, rozliczane przy zamknięciu) albo nikt — podział wg udziału, każdy płaci swoją część.',
     tipProfile: 'Której osoby dotyczy ten wpis dziennika wolnych środków.',
     tipNote: 'Dowolna notatka do tego wpisu.',
     tipCurrency: 'Trzyliterowy kod waluty dla wszystkich kwot, np. EUR albo PLN.',
@@ -339,16 +332,13 @@ const I18N = {
     tipOpen: 'Ten miesiąc jest otwarty — plan i wydatki można edytować.',
     tipClosed: 'Ten miesiąc jest zamknięty — tylko do odczytu, poza dziennikiem ostatnio zamkniętego miesiąca.',
     tipBalance: 'Kwota netto do rozliczenia między osobami za wydatki zapłacone osobiście: kto komu płaci przy zamknięciu.',
-    tipTransferAfterPayday: 'Udział {name} w kosztach wspólnych w tym miesiącu: część wg pensji w całym planie wspólnym (pozycja z własnym % nadpisuje go dla tej pozycji). Na Twoich liczbach: pensja {salary} z {combined} łącznego dochodu, plan wspólny {plan} → udział {amount}.',
-    tipGuaranteedLeft: 'Pieniądze, które {name} zostają w każdym razie: pensja minus udział w kosztach stałych minus wydatki osobiste. Twoje liczby: {salary} − {fixed} − {personal} = {left}.',
-    tipPlannedLeft: 'Wolne środki „na pewno” minus zaplanowany udział w zmiennych kosztach wspólnych. Twoje liczby: {prev} − {var} = {left}.',
-    tipProjectedLeft: 'Wolne środki, jeśli wydatki zostaną takie jak zarejestrowane: pensja minus udział w stałych minus rzeczywiste wydatki minus osobiste. Twoje liczby: {salary} − {fixed} − {spent} − {personal} = {left}.',
-    tipPotBalance: 'Ile zostało z planu wspólnego: koszty stałe zakładamy opłacone automatycznie, wydatki opłacone z planu są z niego pokrywane. Twoje liczby: plan {plan} − stałe {fixed} − wydatki z planu {potpaid} = {balance}. Przy zamknięciu wraca do każdej osoby wg udziału pensji.',
-    tipSettleUp: 'Wydatki zapłacone osobiście są przy zamknięciu wyrównywane tak, żeby skończyły się podzielone wg pensji. W tym miesiącu: {from} płaci {to} {amount}.',
+    tipTransferAfterPayday: 'Udział {name} w kosztach wspólnych w tym miesiącu, płacony z własnej pensji: część wg pensji w całym planie wspólnym (pozycja z własnym % nadpisuje go dla tej pozycji). Na Twoich liczbach: pensja {salary} z {combined} łącznego dochodu, plan wspólny {plan} → udział {amount}.',
+    tipLeftAfterShared: 'Ile {name} zostaje po kosztach wspólnych, na bieżąco: pensja minus udział w kosztach stałych minus udział w wydanych już pieniądzach. Twoje liczby: {salary} − {fixed} − {spent} = {left}.',
+    tipLeftAfterPersonal: 'Ile {name} zostaje także po kosztach osobistych: zostało po wspólnych minus wydatki osobiste. Twoje liczby: {prev} − {personal} = {left}.',
+    tipSettleUp: 'Bilans z sumy tego, co każda osoba dołożyła osobiście: kto dołożył więcej, dostaje zwrot od drugiej. W tym miesiącu: {from} dołożył(a) się o {amount} bardziej — {to} oddaje.',
     tipOfIncome: 'Udział w kosztach jako % własnej pensji {name}: {amount} z {salary} = {pct}%. Gdy oba procenty są równe, podział jest uczciwy.',
     tipSplitOfPlan: 'Zaplanowany podział planu wspólnego: {a} {ca}% i {b} {cb}% z planu {plan} — wg pensji ({sa} / {sb}), chyba że pozycja ma własny %. Ten pasek mierzy plan, nie to, kto faktycznie zapłacił.',
-    tipCoversSpending: 'Z faktycznie wydanych {spent} — kto zapłacił: {a} osobiście {fa}%, {b} osobiście {fb}%, plan wspólny {fp}%. Ten pasek mierzy faktyczne płatności, w przeciwieństwie do paska planu wyżej.',
-    tipFairIncome: 'Uczciwie znaczy, że obie osoby przeznaczają taki sam % własnej pensji na koszty wspólne. Teraz: {a} {ia}%, {b} {ib}%.',
+    tipFairIncome: 'Uczciwie znaczy, że obie osoby przeznaczają taki sam % własnej pensji na koszty wspólne. Teraz: {a} {ia}%, {b} {ib}%',
     tipEditHint: 'Dziennik wolnych środków można edytować tylko w ostatnio zamkniętym miesiącu.',
     tipReadOnly: 'Starsze zamknięte miesiące są tylko do odczytu.',
     tipMonthClosed: 'Zamknięte miesiące są tylko do odczytu.',
@@ -1265,7 +1255,7 @@ function figTipParams(s, p, names) {
     pct: `${pct(s.contributions[p], s.salaries[p])}%`,
     fixed: fmtMoney(s.fixedShare[p]),
     personal: fmtMoney(s.personalOut[p]),
-    prev: fmtMoney(s.guaranteedLeft[p]),
+    prev: fmtMoney(s.leftAfterShared?.[p] ?? s.projectedLeft?.[p] ?? 0),
     var: fmtMoney(s.variableShare[p]),
     spent: fmtMoney(s.actualSpent),
   };
@@ -1297,23 +1287,6 @@ function renderFigures() {
     el('div', { class: 'block-head' }, fairHint)
   );
 
-  const potPaid = s.actualSpent - s.fronted.A - s.fronted.B;
-  const fA = pct(s.fronted.A, s.actualSpent);
-  const fB = pct(s.fronted.B, s.actualSpent);
-  const fPot = pct(potPaid, s.actualSpent);
-  const covBlock = el('div', { class: 'split-block' },
-    el('div', { class: 'block-head' },
-      el('h3', {}, tipWrap('coversSpending', 'tipCoversSpending', {
-        spent: fmtMoney(s.actualSpent), a: names.A, b: names.B, fa: `${fA}`, fb: `${fB}`, fp: `${fPot}`,
-      }).node),
-      el('span', { class: 'money', text: fmtMoney(s.actualSpent) })),
-    splitBar([['seg-a', fA], ['seg-b', fB], ['seg-pot', fPot]], `${names.A} ${fA}%, ${names.B} ${fB}%, ${t('pot')} ${fPot}%`),
-    el('p', { class: 'split-legend' },
-      legendItem('seg-a', `${names.A} ${fA}%`),
-      legendItem('seg-b', `${names.B} ${fB}%`),
-      legendItem('seg-pot', `${t('pot')} ${fPot}%`))
-  );
-
   const cols = el('div', { class: 'partner-cols' },
     ...['A', 'B'].map((p) => {
       const bp = figTipParams(s, p, names);
@@ -1321,28 +1294,23 @@ function renderFigures() {
         el('h3', { class: p === 'A' ? 'who-a' : 'who-b', text: `${names[p]} — ${p === 'A' ? cA : cB}% ${t('ofPlan')}` }),
         figRow('transferAfterPayday', fmtMoney(s.contributions[p]), 'tipTransferAfterPayday', bp),
         figRow('ofIncome', pctStr(p === 'A' ? iA : iB), 'tipOfIncome', bp),
-        figRow('guaranteedLeft', fmtMoney(s.guaranteedLeft[p]), 'tipGuaranteedLeft', { ...bp, left: fmtMoney(s.guaranteedLeft[p]) }),
-        figRow('plannedLeft', fmtMoney(s.plannedLeft[p]), 'tipPlannedLeft', { ...bp, left: fmtMoney(s.plannedLeft[p]) }),
-        figRow('projectedLeft', fmtMoney(s.projectedLeft[p]), 'tipProjectedLeft', { ...bp, left: fmtMoney(s.projectedLeft[p]) })
+        figRow('leftAfterShared', fmtMoney(s.leftAfterShared[p]), 'tipLeftAfterShared', { ...bp, left: fmtMoney(s.leftAfterShared[p]) }),
+        figRow('leftAfterPersonal', fmtMoney(s.leftAfterPersonal[p]), 'tipLeftAfterPersonal', { ...bp, prev: fmtMoney(s.leftAfterShared[p]), left: fmtMoney(s.leftAfterPersonal[p]) })
       );
     })
   );
 
-  let settleLine = figRow('settleUp', t('none'), 'tipSettleUp', { from: '—', to: '—', amount: '—' });
+  /* settle-up = balance equation over the SUM of fronted amounts; equal balance says so */
+  let settleLine = figRow('settleUp', t('settleEven'), 'tipSettleUp', { from: '—', to: '—', amount: '—' });
   if (s.settle && (s.settle.A !== 0 || s.settle.B !== 0)) {
     const [p, other] = s.settle.A > 0 ? ['A', 'B'] : ['B', 'A'];
     const amount = fmtMoney(Math.abs(s.settle[p]));
-    settleLine = figRow('settleUp', t('settleLine', { from: names[other], to: names[p], amount }), 'tipSettleUp', { from: names[other], to: names[p], amount });
+    settleLine = figRow('settleUp', t('settleLine', { from: names[p], to: names[other], amount }), 'tipSettleUp', { from: names[p], to: names[other], amount });
   }
   box.append(
     planBlock,
-    covBlock,
     cols,
     el('div', { class: 'split-block' },
-      figRow('potBalance', fmtMoney(s.potBalance), 'tipPotBalance', {
-        plan: fmtMoney(s.sharedPlannedTotal), fixed: fmtMoney(s.fixedTotal),
-        potpaid: fmtMoney(s.actualSpent - s.fronted.A - s.fronted.B), balance: fmtMoney(s.potBalance),
-      }),
       settleLine
     )
   );
@@ -1531,6 +1499,9 @@ function renderExpenses() {
 function renderSummaryBody(box, snapshot, month) {
   const names = { A: state.profiles[0]?.name, B: state.profiles[1]?.name };
   const s = snapshot;
+  /* legacy snapshots (pre-2.0) stored the old leftover keys — fall back for history */
+  const leftShared = s.leftAfterShared ?? s.projectedLeft ?? { A: 0, B: 0 };
+  const leftPersonal = s.leftAfterPersonal ?? s.projectedLeft ?? { A: 0, B: 0 };
   const pa = figTipParams(s, 'A', names); /* worked example uses the first row's numbers */
   const rows = [];
   for (const p of ['A', 'B']) {
@@ -1538,29 +1509,25 @@ function renderSummaryBody(box, snapshot, month) {
       el('td', { text: names[p] }),
       el('td', { class: 'num money', text: fmtMoney(snapshot.contributions[p]) }),
       el('td', { class: 'num money', text: fmtMoney(snapshot.fronted[p]) }),
-      el('td', { class: 'num money', text: fmtMoney(snapshot.guaranteedLeft[p]) }),
-      el('td', { class: 'num money', text: fmtMoney(snapshot.plannedLeft[p]) }),
-      el('td', { class: 'num money', text: fmtMoney(snapshot.projectedLeft[p]) })
+      el('td', { class: 'num money', text: fmtMoney(leftShared[p]) }),
+      el('td', { class: 'num money', text: fmtMoney(leftPersonal[p]) })
     ));
   }
   const parts = [
     el('h3', {}, tipWrap('contributions', 'tipContributions').node, ` — ${month.ym}`),
     itemTable(
       [tipWrap('label', 'tipLabel').node, tipWrap('contributions', 'tipContributions', pa).node, tipWrap('paid', 'tipPaid', { name: names.A, amount: fmtMoney(s.fronted.A) }).node,
-       tipWrap('guaranteedLeft', 'tipGuaranteedLeft', { ...pa, left: fmtMoney(s.guaranteedLeft.A) }).node,
-       tipWrap('plannedLeft', 'tipPlannedLeft', { ...pa, left: fmtMoney(s.plannedLeft.A) }).node,
-       tipWrap('projectedLeft', 'tipProjectedLeft', { ...pa, left: fmtMoney(s.projectedLeft.A) }).node],
+       tipWrap('leftAfterShared', 'tipLeftAfterShared', { ...pa, left: fmtMoney(leftShared.A) }).node,
+       tipWrap('leftAfterPersonal', 'tipLeftAfterPersonal', { ...pa, prev: fmtMoney(leftShared.A), left: fmtMoney(leftPersonal.A) }).node],
       rows
     ),
-    fig('potBalance', fmtMoney(snapshot.potBalance), 'tipPotBalance', {
-      plan: fmtMoney(s.sharedPlannedTotal), fixed: fmtMoney(s.fixedTotal),
-      potpaid: fmtMoney(s.actualSpent - s.fronted.A - s.fronted.B), balance: fmtMoney(s.potBalance),
-    }),
   ];
   if (snapshot.settle && (snapshot.settle.A !== 0 || snapshot.settle.B !== 0)) {
     const [p, other] = snapshot.settle.A > 0 ? ['A', 'B'] : ['B', 'A'];
     parts.push(el('p', { class: 'settle' },
-      t('settleLine', { from: names[other], to: names[p], amount: fmtMoney(Math.abs(snapshot.settle[p])) })));
+      t('settleLine', { from: names[p], to: names[other], amount: fmtMoney(Math.abs(snapshot.settle[p])) })));
+  } else {
+    parts.push(el('p', { class: 'settle', text: t('settleEven') }));
   }
   if (snapshot.personalSupport.length) {
     parts.push(el('h3', { text: t('personalSupport') }));

@@ -156,34 +156,23 @@ export function computeSummary({ salaryA, salaryB, items, expenses }) {
   const outA = personalOut(items, 1);
   const outB = personalOut(items, 2);
 
-  const guaranteedLeft = {
-    A: salaryA - fixedShare.a - outA,
-    B: salaryB - fixedShare.b - outB,
-  };
-  const plannedLeft = {
-    A: guaranteedLeft.A - variableShare.a,
-    B: guaranteedLeft.B - variableShare.b,
-  };
-
+  /* No-pot model: partners pay shared costs from their own salaries. Leftovers are
+     computed live from what was actually spent so far (fixed costs are assumed paid). */
   const actualSpent = expenses.reduce((s, e) => s + e.amountCents, 0);
   const actualVariable = splitBySalary(actualSpent, salaryA, salaryB);
   const actualShare = { a: fixedShare.a + actualVariable.a, b: fixedShare.b + actualVariable.b };
-  const projectedLeft = {
-    A: salaryA - actualShare.a - outA,
-    B: salaryB - actualShare.b - outB,
-  };
+  const leftAfterShared = { A: salaryA - actualShare.a, B: salaryB - actualShare.b };
+  const leftAfterPersonal = { A: leftAfterShared.A - outA, B: leftAfterShared.B - outB };
 
+  /* Settle-up is the balance equation over the SUM of what each partner fronted:
+     settle(P) = fronted(P) − share(P) × Σ fronted. Positive: chipped in more, gets
+     paid back; negative: owes. The two lines always sum to zero. */
   const fronted = { A: 0, B: 0 };
-  let potPaid = 0;
   for (const e of expenses) {
     if (e.payerProfileId === 1) fronted.A += e.amountCents;
     else if (e.payerProfileId === 2) fronted.B += e.amountCents;
-    else potPaid += e.amountCents;
   }
   const settle = settleUp({ frontedA: fronted.A, frontedB: fronted.B, salaryA, salaryB });
-
-  const potBalance = sharedPlannedTotal - fixedTotal - potPaid;
-  const potReturn = splitBySalary(potBalance, salaryA, salaryB);
 
   const linked = new Map();
   let unplanned = 0;
@@ -213,14 +202,11 @@ export function computeSummary({ salaryA, salaryB, items, expenses }) {
     variableShare: { A: variableShare.a, B: variableShare.b },
     actualShare: { A: actualShare.a, B: actualShare.b },
     personalOut: { A: outA, B: outB },
-    guaranteedLeft,
-    plannedLeft,
+    leftAfterShared,
+    leftAfterPersonal,
     actualSpent,
-    projectedLeft,
     fronted,
     settle,
-    potBalance,
-    potReturn,
     personalSupport: personalSupport(items),
     planVsActual,
     unplannedTotal: unplanned,

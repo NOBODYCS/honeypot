@@ -53,7 +53,7 @@ At most one row with `status='open'` (enforced by app logic + a partial unique i
 - `amount_cents INTEGER NOT NULL CHECK (amount_cents > 0)`
 - `plan_item_id INTEGER REFERENCES plan_items(id)` — optional link; variable items only;
   fixed costs are never expense entries (R7)
-- `payer_profile_id INTEGER REFERENCES profiles(id)` — NULL = pot-paid; set = fronted (R8)
+- `payer_profile_id INTEGER REFERENCES profiles(id)` — NULL = split by share, each paid their own part; set = fronted personally (R8)
 
 ### leftover_entries
 - `id INTEGER PRIMARY KEY`
@@ -67,14 +67,14 @@ At most one row with `status='open'` (enforced by app logic + a partial unique i
 ## Derived-on-read (never stored as inputs — R16)
 
 Computed from the tables above on every request: `combinedIncome`, `share(P)`,
-`sharedPlannedTotal`, `contribution(P)` (R1–R4), `guaranteedLeft` / `plannedLeft` /
-`projectedLeft` (R5–R7), `fronted(P)` / `settle(P)` / pot balance (R8), `personalOut(P)`
+`sharedPlannedTotal`, `contribution(P)` (R1–R4), `leftAfterShared` /
+`leftAfterPersonal` (R5–R6), `fronted(P)` / `settle(P)` (R8), `personalOut(P)`
 (R12), plan-vs-actual per variable item and unplanned total.
 
 ## Invariants to test (property tests, tests/money.test.js)
 
 - Shares sum exactly to the total; `contribution(A) + contribution(B) = sharedPlannedTotal`.
 - `settle(A) + settle(B) = 0` whenever any payer-tagged expense exists.
-- `plannedLeft = guaranteedLeft − variablePlannedTotal × share`.
+- `leftAfterPersonal = leftAfterShared − personalOut`; `leftAfterShared = salary − fixedShare − share × actualSpent`.
 - Closing a month changes nothing in any other month (R11).
 - All stored amounts are integers ≥ 0 (expenses > 0).

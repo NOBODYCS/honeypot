@@ -188,7 +188,9 @@ test('US2: new month prefills editable defaults from most recent month', async (
   assert.equal(next.body.items[2].partnerSharePct, 25);
   assert.equal(next.body.salaries['1'], 200000);
   assert.equal(next.body.salaries['2'], 100000);
-  assert.equal(next.body.summary.potBalance, 30000);
+  // no-pot model: leftover after shared = salary - share of (fixed + spent); nothing spent yet -> fixed only
+  assert.equal(next.body.summary.leftAfterShared.A, 200000 - Math.floor((80000 * 200000) / 300000));
+  assert.equal(next.body.summary.leftAfterShared.A + next.body.summary.leftAfterShared.B, 300000 - 80000);
   assert.equal(next.body.expenses.length, 0);
 });
 
@@ -282,7 +284,8 @@ test('US5: close freezes snapshot; no payer means settle null', async () => {
   assert.equal(closed.body.summary.personalSupport.length, 1);
   const hist = await call('GET', '/api/months/2026-04/history');
   assert.equal(hist.body.snapshot.settle, null);
-  assert.equal(hist.body.snapshot.potBalance, closed.body.summary.potBalance);
+  assert.equal(hist.body.snapshot.leftAfterShared.A, closed.body.summary.leftAfterShared.A);
+  assert.equal(hist.body.snapshot.leftAfterPersonal.B, closed.body.summary.leftAfterPersonal.B);
   assert.equal(hist.body.expenses.length, 1);
 });
 

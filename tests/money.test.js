@@ -52,7 +52,7 @@ test('R8: settle-up always sums to zero when a payer exists', () => {
   }
 });
 
-test('R5/R6: plannedLeft = guaranteedLeft - variable share', () => {
+test('R5/R6 (no-pot): leftAfterPersonal = leftAfterShared - personalOut; leftAfterShared = salary - actual share', () => {
   for (let i = 0; i < 500; i++) {
     const salaryA = randomCents(400000);
     const salaryB = randomCents(400000);
@@ -60,6 +60,7 @@ test('R5/R6: plannedLeft = guaranteedLeft - variable share', () => {
     const variableTotal = randomCents(100000);
     const personalA = randomCents(50000);
     const personalB = randomCents(50000);
+    const spent = randomCents(80000);
     const s = computeSummary({
       salaryA,
       salaryB,
@@ -69,14 +70,12 @@ test('R5/R6: plannedLeft = guaranteedLeft - variable share', () => {
         { kind: 'personal', amountCents: personalA, ownerProfileId: 1, partnerSharePct: 0 },
         { kind: 'personal', amountCents: personalB, ownerProfileId: 2, partnerSharePct: 0 },
       ],
-      expenses: [],
+      expenses: [{ amountCents: spent, payerProfileId: null }],
     });
     for (const p of ['A', 'B']) {
-      assert.equal(s.plannedLeft[p], s.guaranteedLeft[p] - s.variableShare[p]);
-      assert.equal(
-        s.guaranteedLeft[p],
-        s.salaries[p] - s.fixedShare[p] - s.personalOut[p]
-      );
+      assert.equal(s.leftAfterPersonal[p], s.leftAfterShared[p] - s.personalOut[p]);
+      assert.equal(s.leftAfterShared[p], s.salaries[p] - s.actualShare[p]);
+      assert.equal(s.actualShare[p] + s.actualShare[p === 'A' ? 'B' : 'A'], s.fixedTotal + spent);
     }
   }
 });
@@ -99,7 +98,7 @@ test('R4: contributions sum exactly to sharedPlannedTotal', () => {
   }
 });
 
-test('R7: projectedLeft uses actualSpent in place of variable plan', () => {
+test('R7 (no-pot): leftAfterShared uses actualSpent live, not the variable plan', () => {
   const salaryA = 250000;
   const salaryB = 150000;
   const s = computeSummary({
@@ -116,15 +115,12 @@ test('R7: projectedLeft uses actualSpent in place of variable plan', () => {
   });
   assert.equal(s.actualSpent, 25000);
   for (const p of ['A', 'B']) {
-    assert.equal(
-      s.projectedLeft[p],
-      s.salaries[p] - s.actualShare[p] - s.personalOut[p]
-    );
+    assert.equal(s.leftAfterShared[p], s.salaries[p] - s.actualShare[p]);
     assert.equal(s.actualShare[p] + s.actualShare[p === 'A' ? 'B' : 'A'], s.fixedTotal + s.actualSpent);
   }
 });
 
-test('R8: pot balance and settle-up with fronted expenses', () => {
+test('R8 (no-pot): settle-up is the balance equation over summed fronted amounts; no pot balance', () => {
   const salaryA = 300000;
   const salaryB = 100000;
   const s = computeSummary({
@@ -135,17 +131,18 @@ test('R8: pot balance and settle-up with fronted expenses', () => {
       { kind: 'variable', amountCents: 60000 },
     ],
     expenses: [
-      { amountCents: 30000, payerProfileId: null },
+      { amountCents: 30000, payerProfileId: null }, // split by share, no settle line from this
       { amountCents: 12000, payerProfileId: 2 },
     ],
   });
-  assert.equal(s.potBalance, 150000 - 90000 - 30000);
+  assert.equal(s.potBalance, undefined, 'pot balance is gone in the no-pot model');
+  assert.equal(s.potReturn, undefined);
   assert.equal(s.fronted.A, 0);
   assert.equal(s.fronted.B, 12000);
   assert.ok(s.settle);
   assert.equal(s.settle.A + s.settle.B, 0);
   assert.equal(s.settle.B, 12000 - Math.floor((12000 * 100000) / 400000));
-  assert.equal(s.potReturn.a + s.potReturn.b, s.potBalance);
+  assert.ok(s.settle.B > 0 && s.settle.A < 0, 'B fronted more than their share -> B chipped in more (settle.B > 0)');
 });
 
 test('R8: settle-up is null when no expense has a payer', () => {
