@@ -20,6 +20,8 @@ recent month.
 Every shared cost total is split by net salary share (full salaries, never pre-reduced).
 Personal expenses reduce only their owner's leftover; sharing is explicit,
 item-scoped (`partnerShare%`, default 0) and never changes the shared-cost split.
+The app is the source of truth for assignments: what is entered in the app (splits, payers)
+reflects the ideal, and real-life payments follow the app — never the other way round.
 
 ### IV. Raw data is the only input
 Derived values (shares, contributions, leftovers after shared/personal costs, plan-vs-actual,
@@ -202,10 +204,14 @@ change, a semantic version bump (MAJOR for removed/redefined principles, MINOR f
 principles/sections, PATCH for clarifications), and a change-log entry. All PRs must verify
 compliance; any complexity beyond the principles above must be justified in the PR.
 
-**Version**: 2.0.0 | **Ratified**: 2026-11-17 | **Last Amended**: 2026-11-18
+**Version**: 2.0.1 | **Ratified**: 2026-11-17 | **Last Amended**: 2026-11-18
 
 ## Change Log
 
+- **2.0.1 (2026-11-18)** — PATCH: owner principle recorded in Principle III — the app reflects
+  the ideal and reality follows it: what is set in the app (splits, payers) is the source of
+  truth for who pays whom; anything not entered there is matched to the app afterwards, not
+  vice versa.
 - **2.0.0 (2026-11-18)** — MAJOR: no-pot model rework (owner decision). The shared pot is gone:
   partners pay shared costs from their own salaries, fairly (equal % of own salary); leftovers
   are each partner's own money. Removed: pot balance figure, pot return, the coverage bar
