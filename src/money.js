@@ -20,11 +20,36 @@ export function settleUp({ frontedA, frontedB, salaryA, salaryB }) {
   return { A: frontedA - share.a, B: frontedB - share.b };
 }
 
+function personalPct(item) {
+  return item.partnerSharePct != null && item.partnerSharePct >= 0 ? item.partnerSharePct : 0;
+}
+
+/* Shared items: partnerSharePct >= 0 overrides the salary split for that item
+   (pct = share covered by partner B, remainder to A). pct < 0 (unset) = salary split. */
+export function splitShared(items, salaryA, salaryB) {
+  let a = 0;
+  let b = 0;
+  const rest = [];
+  for (const item of items) {
+    const pct = item.partnerSharePct;
+    if (pct != null && pct >= 0) {
+      const pb = Math.floor((item.amountCents * pct) / 100);
+      a += item.amountCents - pb;
+      b += pb;
+    } else {
+      rest.push(item);
+    }
+  }
+  const restTotal = rest.reduce((sum, i) => sum + i.amountCents, 0);
+  const rs = splitBySalary(restTotal, salaryA, salaryB);
+  return { a: a + rs.a, b: b + rs.b };
+}
+
 export function personalOut(items, profileId) {
   let out = 0;
   for (const item of items) {
     if (item.kind !== 'personal') continue;
-    const pct = item.partnerSharePct ?? 0;
+    const pct = personalPct(item);
     const amount = item.amountCents;
     if (item.ownerProfileId === profileId) {
       out += amount - Math.floor((amount * pct) / 100);
@@ -38,7 +63,7 @@ export function personalOut(items, profileId) {
 export function personalSupport(items) {
   const lines = [];
   for (const item of items) {
-    const pct = item.partnerSharePct ?? 0;
+    const pct = personalPct(item);
     if (item.kind !== 'personal' || pct <= 0) continue;
     const partnerPays = Math.floor((item.amountCents * pct) / 100);
     lines.push({
@@ -63,9 +88,9 @@ export function computeSummary({ salaryA, salaryB, items, expenses }) {
   const shares =
     combined > 0 ? { A: salaryA / combined, B: salaryB / combined } : { A: 0, B: 0 };
 
-  const contribution = splitBySalary(sharedPlannedTotal, salaryA, salaryB);
-  const fixedShare = splitBySalary(fixedTotal, salaryA, salaryB);
-  const variableShare = splitBySalary(variablePlannedTotal, salaryA, salaryB);
+  const fixedShare = splitShared(fixedItems, salaryA, salaryB);
+  const variableShare = splitShared(variableItems, salaryA, salaryB);
+  const contribution = { a: fixedShare.a + variableShare.a, b: fixedShare.b + variableShare.b };
 
   const outA = personalOut(items, 1);
   const outB = personalOut(items, 2);
@@ -80,7 +105,8 @@ export function computeSummary({ salaryA, salaryB, items, expenses }) {
   };
 
   const actualSpent = expenses.reduce((s, e) => s + e.amountCents, 0);
-  const actualShare = splitBySalary(fixedTotal + actualSpent, salaryA, salaryB);
+  const actualVariable = splitBySalary(actualSpent, salaryA, salaryB);
+  const actualShare = { a: fixedShare.a + actualVariable.a, b: fixedShare.b + actualVariable.b };
   const projectedLeft = {
     A: salaryA - actualShare.a - outA,
     B: salaryB - actualShare.b - outB,

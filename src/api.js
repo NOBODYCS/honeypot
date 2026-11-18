@@ -177,9 +177,9 @@ function validatePlanItem(item) {
     throw new ApiError(400, 'item.label must be a non-empty string');
   }
   validateCents(item.amountCents);
-  const pct = item.partnerSharePct ?? 0;
-  if (!Number.isInteger(pct) || pct < 0 || pct > 100) {
-    throw new ApiError(400, 'partnerSharePct must be an integer in [0,100]');
+  const pct = item.partnerSharePct ?? -1;
+  if (!Number.isInteger(pct) || pct < -1 || pct > 100) {
+    throw new ApiError(400, 'partnerSharePct must be an integer in [-1,100] (-1 = salary split)');
   }
   if (item.kind === 'personal' && ![1, 2].includes(item.ownerProfileId)) {
     throw new ApiError(400, 'personal items need ownerProfileId 1 or 2');
@@ -341,7 +341,7 @@ export function createApi(db) {
         item.label.trim(),
         item.amountCents,
         item.kind === 'personal' ? item.ownerProfileId : null,
-        item.partnerSharePct ?? 0
+        item.partnerSharePct ?? -1
       );
     }
     return monthPayload(db, month);

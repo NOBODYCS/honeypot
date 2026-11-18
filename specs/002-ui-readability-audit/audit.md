@@ -200,6 +200,21 @@ contrast re-measured from the final stylesheet tokens (all text pairs >= 4.5:1, 
 - Each partner's info is on their own side, color-coded: side A = accent, side B = accent-2
   (side panels, figures columns).
 
+## Round 6 — per-user settings, live calc, per-item shares, personal cards (2026-11-18)
+
+- Theme is per PARTNER PROFILE (server-side) again — never per browser. Settings shows only
+  the current profile (name + theme preset + mode); the other partner's theme is not editable
+  from your session. One Save button in Settings.
+- "Currency (ISO 4217)" label simplified to "Currency"/"Waluta".
+- Live calculations: plan figures recompute client-side on every keystroke (shared money.js
+  served at /shared/money.js) + debounced autosave with a Saving…/Saved indicator; the plan
+  Save button is gone.
+- Per-item partner share % on fixed/variable costs (empty = "auto" salary split); -1 sentinel,
+  guarded table-rebuild migration, API validates [-1,100]; sums stay exact (tests).
+- Split bar now reflects effective contributions (incl. overrides); each partner column shows
+  their actual % of own income; fairness note shows when both are equal.
+- Personal expenses render as compact cards in the side panels — no horizontal scrolling.
+
 ## Guidelines checked against
 - WCAG 2.2 (W3C): SC 1.4.3 contrast ≥ 4.5:1 normal / 3:1 large text; SC 1.4.11 non-text
   ≥ 3:1; SC 2.4.7 visible focus; SC 2.5.8 target size ≥ 24×24px (44×44px recommended —

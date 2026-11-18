@@ -32,8 +32,8 @@ CREATE TABLE IF NOT EXISTS plan_items (
   label TEXT NOT NULL,
   amount_cents INTEGER NOT NULL CHECK (amount_cents >= 0),
   owner_profile_id INTEGER REFERENCES profiles(id),
-  partner_share_pct INTEGER NOT NULL DEFAULT 0
-    CHECK (partner_share_pct BETWEEN 0 AND 100)
+  partner_share_pct INTEGER NOT NULL DEFAULT -1
+    CHECK (partner_share_pct BETWEEN -1 AND 100)
 );
 
 CREATE TABLE IF NOT EXISTS expenses (
@@ -81,6 +81,23 @@ export function openDb(dbPath) {
   const cols = db.prepare('PRAGMA table_info(expenses)').all().map((c) => c.name);
   if (!cols.includes('category')) {
     db.exec("ALTER TABLE expenses ADD COLUMN category TEXT NOT NULL DEFAULT ''");
+  }
+  const planDdl = db.prepare("SELECT sql FROM sqlite_master WHERE type='table' AND name='plan_items'").get();
+  if (planDdl && planDdl.sql.includes('BETWEEN 0 AND 100')) {
+    db.exec('PRAGMA foreign_keys = OFF;');
+    db.exec(`CREATE TABLE plan_items_new (
+      id INTEGER PRIMARY KEY,
+      month_id INTEGER NOT NULL REFERENCES months(id),
+      kind TEXT NOT NULL CHECK (kind IN ('fixed','variable','personal')),
+      label TEXT NOT NULL,
+      amount_cents INTEGER NOT NULL CHECK (amount_cents >= 0),
+      owner_profile_id INTEGER REFERENCES profiles(id),
+      partner_share_pct INTEGER NOT NULL DEFAULT -1 CHECK (partner_share_pct BETWEEN -1 AND 100)
+    );`);
+    db.exec(`INSERT INTO plan_items_new SELECT id, month_id, kind, label, amount_cents, owner_profile_id, CASE WHEN partner_share_pct = 0 THEN -1 ELSE partner_share_pct END FROM plan_items;`);
+    db.exec('DROP TABLE plan_items;');
+    db.exec('ALTER TABLE plan_items_new RENAME TO plan_items;');
+    db.exec('PRAGMA foreign_keys = ON;');
   }
   return db;
 }

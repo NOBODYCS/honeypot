@@ -94,6 +94,10 @@ export function startServer({ dbPath, port }) {
         const body = await readBody(req);
         const result = await api.handle(req.method, url.pathname, body);
         sendJson(res, result.status, result.body);
+      } else if (url.pathname === '/shared/money.js' && (req.method === 'GET' || req.method === 'HEAD')) {
+        const headers = { ...SECURITY_HEADERS, 'content-type': MIME['.js'], 'cache-control': 'no-cache' };
+        res.writeHead(200, headers);
+        fs.createReadStream(path.join(__dirname, 'money.js')).pipe(res);
       } else if (req.method === 'GET' || req.method === 'HEAD') {
         sendStatic(req, res, url.pathname);
       } else {

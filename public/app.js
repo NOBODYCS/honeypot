@@ -1,3 +1,5 @@
+import { computeSummary } from '/shared/money.js';
+
 /* Honeypot frontend — vanilla JS, no build step. One screen + slide-over dialogs. */
 
 const I18N = {
@@ -16,7 +18,7 @@ const I18N = {
     liveFigures: 'Live figures',
     spendingLog: 'Spending log',
     whoAreYou: 'Which one are you?',
-    whoAreYouHint: 'This only prefills forms and picks your theme. Both partners can edit everything.',
+    whoAreYouHint: "This only prefills forms and picks your theme. Both partners can edit everything.",
     close: 'Close',
     monthSummary: 'Month summary',
     salaries: 'Salaries',
@@ -29,7 +31,8 @@ const I18N = {
     add: 'Add',
     remove: 'Remove',
     save: 'Save',
-    saved: 'Saved.',
+    saved: "Saved.",
+    saving: "Saving…",
     transferAfterPayday: 'Transfer after payday',
     guaranteedLeft: 'Guaranteed leftover',
     plannedLeft: 'Planned leftover',
@@ -57,7 +60,7 @@ const I18N = {
     mode: 'Mode',
     light: 'light',
     dark: 'dark',
-    currency: 'Currency (ISO 4217)',
+    currency: "Currency",
     categories: 'Expense categories',
     language: 'Language',
     category: 'Category',
@@ -125,6 +128,7 @@ const I18N = {
     remove: 'Usu\u0144',
     save: 'Zapisz',
     saved: 'Zapisano.',
+    saving: "Zapisywanie…",
     transferAfterPayday: 'Przelew po wyp\u0142acie',
     guaranteedLeft: 'Wolne \u015brodki \u2014 gwarantowane',
     plannedLeft: 'Wolne \u015brodki \u2014 planowane',
@@ -152,7 +156,7 @@ const I18N = {
     mode: 'Tryb',
     light: 'jasny',
     dark: 'ciemny',
-    currency: 'Waluta (ISO 4217)',
+    currency: "Waluta",
     categories: 'Kategorie wydatk\u00f3w',
     language: 'J\u0119zyk',
     category: 'Kategoria',
@@ -281,7 +285,8 @@ const PRESETS = [
 function applyTheme(profile) {
   const root = document.documentElement;
   for (const prop of THEME_PROPS) root.style.removeProperty(prop);
-  root.dataset.theme = PRESET_IDS.includes(profile?.theme?.preset) ? profile.theme.preset : 'paper';
+  const preset = PRESET_IDS.includes(profile?.theme?.preset) ? profile.theme.preset : 'paper';
+  root.dataset.theme = preset;
   root.dataset.mode = profile?.theme?.mode === 'dark' ? 'dark' : 'light';
 }
 
@@ -335,8 +340,7 @@ function setProfile(id) {
   state.profileId = id;
   localStorage.setItem('honeypot-profile', String(id));
   renderHeader();
-  const profile = currentProfile();
-  if (profile) applyTheme(profile);
+  applyTheme(currentProfile());
 }
 
 function renderHeader() {
@@ -381,8 +385,7 @@ async function refreshState() {
   if (!state.profileId || !state.profiles.some((p) => p.id === state.profileId)) {
     showProfilePick();
   } else {
-    const profile = currentProfile();
-    if (profile) applyTheme(profile);
+    applyTheme(currentProfile());
   }
 }
 
@@ -503,20 +506,28 @@ function itemRows(kind, owner, listEl) {
     )
     .map(({ item, idx }) => {
       const cells = [
-        textInput(item.label, (v) => (item.label = v), { disabled: !canEdit }),
-        moneyInput(item.amountCents, (v) => (item.amountCents = v), { disabled: !canEdit }),
+        textInput(item.label, (v) => { item.label = v; scheduleAutosave(); }, { disabled: !canEdit }),
+        moneyInput(item.amountCents, (v) => { item.amountCents = v; scheduleAutosave(); }, { disabled: !canEdit }),
       ];
+      const pctInput = (shared) => el('input', {
+        type: 'number',
+        min: '0',
+        max: '100',
+        inputmode: 'numeric',
+        placeholder: shared ? 'auto' : undefined,
+        'aria-label': shared ? `${state.profiles[1]?.name ?? 'B'} %` : t('partnerShare'),
+        value: item.partnerSharePct >= 0 ? item.partnerSharePct : '',
+        disabled: !canEdit,
+        oninput: (e) => {
+          const v = e.target.value;
+          item.partnerSharePct = v === '' ? -1 : Math.max(0, Math.min(100, Number(v) || 0));
+          scheduleAutosave();
+        },
+      });
       if (kind === 'personal') {
-        cells.push(
-          el('input', {
-            type: 'number',
-            min: '0',
-            max: '100',
-            value: item.partnerSharePct ?? 0,
-            disabled: !canEdit,
-            oninput: (e) => (item.partnerSharePct = Math.max(0, Math.min(100, Number(e.target.value) || 0))),
-          })
-        );
+        cells.push(pctInput(false));
+      } else {
+        cells.push(pctInput(true));
       }
       cells.push(
         el('button', {
@@ -529,6 +540,7 @@ function itemRows(kind, owner, listEl) {
             renderPlan();
             renderPersonal(1, $('#personal-list-a'));
             renderPersonal(2, $('#personal-list-b'));
+            scheduleAutosave();
           },
         })
       );
@@ -578,23 +590,17 @@ function renderPlan() {
     el('div', { class: 'form-grid' },
       ...[1, 2].map((pid) =>
         field(t('salaryFor', { name: state.profiles.find((p) => p.id === pid)?.name ?? pid }),
-          moneyInput(state.draft.salaries[pid], (v) => (state.draft.salaries[pid] = v), { disabled: !canEdit }))
+          moneyInput(state.draft.salaries[pid], (v) => { state.draft.salaries[pid] = v; scheduleAutosave(); }, { disabled: !canEdit }))
       ),
-      el('button', {
-        type: 'button',
-        class: 'btn btn-primary',
-        text: t('save'),
-        disabled: !canEdit,
-        onclick: (e) => withBusy(e.currentTarget, savePlan),
-      })
+      el('span', { class: 'hint', id: 'plan-save-state' })
     ),
-    el('p', { class: 'hint', text: shareHint() })
+    el('p', { class: 'hint', id: 'plan-share-hint', text: shareHint() })
   );
 
   const fixed = $('#plan-fixed');
   fixed.replaceChildren(
     el('h3', { text: t('fixedShared') }),
-    itemTable([t('label'), t('amount')], itemRows('fixed'), canEdit ? null : t('monthClosed'), t('noItems')),
+    itemTable([t('label'), t('amount'), `${state.profiles[1]?.name ?? 'B'} %`], itemRows('fixed'), canEdit ? null : t('monthClosed'), t('noItems')),
     canEdit
       ? el('button', { type: 'button', class: 'btn', text: t('add'), onclick: () => addItem('fixed') })
       : el('p', { class: 'hint', text: t('monthClosed') })
@@ -603,12 +609,46 @@ function renderPlan() {
   const variable = $('#plan-variable');
   variable.replaceChildren(
     el('h3', { text: t('variableShared') }),
-    itemTable([t('label'), t('amount')], itemRows('variable'), canEdit ? null : t('monthClosed'), t('noItems')),
+    itemTable([t('label'), t('amount'), `${state.profiles[1]?.name ?? 'B'} %`], itemRows('variable'), canEdit ? null : t('monthClosed'), t('noItems')),
     canEdit ? el('button', { type: 'button', class: 'btn', text: t('add'), onclick: () => addItem('variable') }) : null
   );
 }
 
-async function savePlan() {
+function liveSummary() {
+  if (!state.month) return null;
+  if (!state.draft) return state.month.summary;
+  return computeSummary({
+    salaryA: state.draft.salaries[1] ?? 0,
+    salaryB: state.draft.salaries[2] ?? 0,
+    items: state.draft.items,
+    expenses: state.month.expenses,
+  });
+}
+
+function updateDerived() {
+  if (!state.month) return;
+  const hint = document.getElementById('plan-share-hint');
+  if (hint) hint.textContent = shareHint();
+  renderFigures();
+}
+
+let autosaveTimer = null;
+
+function setSaveState(text) {
+  const indicator = document.getElementById('plan-save-state');
+  if (indicator) indicator.textContent = text;
+}
+
+function scheduleAutosave() {
+  updateDerived();
+  if (!state.month || !editable()) return;
+  setSaveState(t('saving'));
+  clearTimeout(autosaveTimer);
+  autosaveTimer = setTimeout(autosave, 700);
+}
+
+async function autosave() {
+  if (!state.month || !editable()) return;
   const items = state.draft.items
     .filter((i) => i.label.trim() && i.amountCents > 0)
     .map((i) => ({
@@ -616,26 +656,64 @@ async function savePlan() {
       label: i.label,
       amountCents: i.amountCents,
       ownerProfileId: i.ownerProfileId,
-      partnerSharePct: i.partnerSharePct ?? 0,
+      partnerSharePct: i.partnerSharePct ?? -1,
     }));
   try {
     state.month = await api('PUT', `/api/months/${state.month.ym}/plan`, {
       salaries: state.draft.salaries,
       items,
     });
-    state.draft = cloneDraft(state.month);
-    renderMonth();
+    setSaveState(t('saved'));
   } catch (err) {
+    setSaveState(t('error'));
     notifyError(err);
   }
 }
 
 function renderPersonal(owner, box) {
   const canEdit = editable();
+  const rows = state.draft.items
+    .map((item, idx) => ({ item, idx }))
+    .filter(({ item }) => item.kind === "personal" && item.ownerProfileId === owner)
+    .map(({ item, idx }) =>
+      el("div", { class: "personal-item" },
+        el("div", { class: "personal-row" },
+          textInput(item.label, (v) => { item.label = v; scheduleAutosave(); }, { disabled: !canEdit }),
+          moneyInput(item.amountCents, (v) => { item.amountCents = v; scheduleAutosave(); }, { disabled: !canEdit })),
+        el("div", { class: "personal-row" },
+          el("label", { class: "personal-pct" },
+            el("span", { class: "field-label", text: t("partnerShare") }),
+            el("input", {
+              type: "number",
+              min: "0",
+              max: "100",
+              inputmode: "numeric",
+              value: item.partnerSharePct >= 0 ? item.partnerSharePct : "",
+              disabled: !canEdit,
+              oninput: (e) => {
+                const v = e.target.value;
+                item.partnerSharePct = v === "" ? -1 : Math.max(0, Math.min(100, Number(v) || 0));
+                scheduleAutosave();
+              },
+            })),
+          el("button", {
+            type: "button",
+            class: "btn btn-danger",
+            text: t("remove"),
+            disabled: !canEdit,
+            onclick: () => {
+              state.draft.items.splice(idx, 1);
+              renderPlan();
+              renderPersonal(1, $("#personal-list-a"));
+              renderPersonal(2, $("#personal-list-b"));
+              scheduleAutosave();
+            },
+          }))));
   box.replaceChildren(
-    itemTable([t('label'), t('amount'), t('partnerShare')], itemRows('personal', owner), canEdit ? null : t('monthClosed')),
+    ...(rows.length ? rows : [el("p", { class: "empty-row", text: t("noItems") })]),
+    !canEdit && state.month ? el("p", { class: "empty-row", text: t("monthClosed") }) : null,
     canEdit
-      ? el('button', { type: 'button', class: 'btn', text: t('add'), onclick: () => addItem('personal', owner) })
+      ? el("button", { type: "button", class: "btn", text: t("add"), onclick: () => addItem("personal", owner) })
       : null
   );
 }
@@ -681,13 +759,16 @@ function figRow(label, value) {
 }
 
 function shareHint() {
-  const sal = state.draft?.salaries ?? { 1: 0, 2: 0 };
-  const combined = (sal[1] ?? 0) + (sal[2] ?? 0);
+  const s = liveSummary();
+  if (!s) return t('noItems');
   const nameA = state.profiles[0]?.name ?? 'A';
   const nameB = state.profiles[1]?.name ?? 'B';
-  if (combined <= 0) return t('noItems');
-  const incomePct = pct(state.month?.summary?.sharedPlannedTotal ?? 0, combined);
-  return `${nameA} ${pct(sal[1], combined)}% · ${nameB} ${pct(sal[2], combined)}% ${t('ofPlan')} — ${t('fairIncome', { pct: incomePct })}`;
+  const cA = pct(s.contributions.A, s.sharedPlannedTotal);
+  const cB = pct(s.contributions.B, s.sharedPlannedTotal);
+  const iA = s.salaries.A > 0 ? pct(s.contributions.A, s.salaries.A) : null;
+  const iB = s.salaries.B > 0 ? pct(s.contributions.B, s.salaries.B) : null;
+  const fair = iA != null && iB != null && Math.abs(iA - iB) < 0.05;
+  return `${nameA} ${cA}% · ${nameB} ${cB}% ${t('ofPlan')} — ${fair && iA != null ? t('fairIncome', { pct: iA }) : `${nameA} ${iA}% · ${nameB} ${iB}% ${t('ofIncome')}`}`;
 }
 
 function infoTip(text) {
@@ -697,24 +778,26 @@ function infoTip(text) {
 }
 
 function renderFigures() {
-  const s = state.month.summary;
+  const s = liveSummary();
   const box = $('#figures');
   const names = { A: state.profiles[0]?.name ?? 'A', B: state.profiles[1]?.name ?? 'B' };
   box.replaceChildren();
 
-  const pA = pct(s.shares.A * 100, 100);
-  const pB = pct(s.shares.B * 100, 100);
-  const incomePct = s.combinedIncome > 0 ? pct(s.sharedPlannedTotal, s.combinedIncome) : null;
+  const cA = pct(s.contributions.A, s.sharedPlannedTotal);
+  const cB = pct(s.contributions.B, s.sharedPlannedTotal);
+  const iA = s.salaries.A > 0 ? pct(s.contributions.A, s.salaries.A) : null;
+  const iB = s.salaries.B > 0 ? pct(s.contributions.B, s.salaries.B) : null;
+  const fair = iA != null && iB != null && Math.abs(iA - iB) < 0.05;
   const planBlock = el('div', { class: 'split-block' },
     el('div', { class: 'block-head' },
       el('h3', { text: t('splitOfPlan') }),
       infoTip(t('tipSplit'))),
-    splitBar([['seg-a', s.shares.A * 100], ['seg-b', s.shares.B * 100]], `${names.A} ${pA}%, ${names.B} ${pB}%`),
+    splitBar([['seg-a', cA], ['seg-b', cB]], `${names.A} ${cA}%, ${names.B} ${cB}%`),
     el('p', { class: 'split-legend' },
-      legendItem('seg-a', `${names.A} — ${pA}%`),
-      legendItem('seg-b', `${names.B} — ${pB}%`)),
+      legendItem('seg-a', `${names.A} — ${cA}%`),
+      legendItem('seg-b', `${names.B} — ${cB}%`)),
     el('div', { class: 'block-head' },
-      el('p', { class: 'hint', text: incomePct != null ? t('fairIncome', { pct: incomePct }) : t('noItems') }),
+      el('p', { class: 'hint', text: fair && iA != null ? t('fairIncome', { pct: iA }) : `${names.A} ${iA}% · ${names.B} ${iB}% ${t('ofIncome')}` }),
       infoTip(t('tipIncome')))
   );
 
@@ -736,9 +819,9 @@ function renderFigures() {
   const cols = el('div', { class: 'partner-cols' },
     ...['A', 'B'].map((p) =>
       el('section', { class: 'partner-col' },
-        el('h3', { class: p === 'A' ? 'who-a' : 'who-b', text: `${names[p]} — ${p === 'A' ? pA : pB}% ${t('ofPlan')}` }),
+        el('h3', { class: p === 'A' ? 'who-a' : 'who-b', text: `${names[p]} — ${p === 'A' ? cA : cB}% ${t('ofPlan')}` }),
         figRow(t('transferAfterPayday'), fmtMoney(s.contributions[p])),
-        figRow(t('ofIncome'), incomePct != null ? `${incomePct}%` : t('none')),
+        figRow(t('ofIncome'), (p === 'A' ? iA : iB) != null ? `${p === 'A' ? iA : iB}%` : t('none')),
         figRow(t('guaranteedLeft'), fmtMoney(s.guaranteedLeft[p])),
         figRow(t('plannedLeft'), fmtMoney(s.plannedLeft[p])),
         figRow(t('projectedLeft'), fmtMoney(s.projectedLeft[p]))
@@ -987,63 +1070,61 @@ function renderSettings() {
   const box = $('#settings-body');
   box.replaceChildren();
 
-  const profileEditors = [];
-  for (const p of state.profiles) {
-    const nameInput = textInput(p.name, () => {});
-    let selected = PRESET_IDS.includes(p.theme?.preset) ? p.theme.preset : 'paper';
-    let mode = p.theme?.mode === 'dark' ? 'dark' : 'light';
-    const presetGrid = el('div', { class: 'preset-grid', role: 'radiogroup', 'aria-label': t('themeColors') });
-    const presetButtons = PRESETS.map((pr) => {
-      const btn = el('button', {
-        type: 'button',
-        class: `preset-btn${pr.id === selected ? ' is-selected' : ''}`,
-        role: 'radio',
-        'aria-checked': pr.id === selected ? 'true' : 'false',
-        onclick: () => updateSelection(pr.id),
-      },
-        el('span', { class: 'preset-dots' }, ...pr.dots.map((c) => el('i', { style: `background:${c}` }))),
-        el('span', { class: 'preset-name', text: t(pr.key) })
-      );
-      return btn;
-    });
-    const updateSelection = (id) => {
-      selected = id;
-      presetButtons.forEach((b, i) => {
-        const on = PRESETS[i].id === id;
-        b.classList.toggle('is-selected', on);
-        b.setAttribute('aria-checked', on ? 'true' : 'false');
-      });
-      applyTheme({ theme: { preset: id, mode } });
-    };
-    presetGrid.append(...presetButtons);
-    const modeGroup = segmented(`mode-${p.id}`, [['light', t('light')], ['dark', t('dark')]], mode);
-    modeGroup.addEventListener('change', (e) => {
-      mode = e.target.value;
-      applyTheme({ theme: { preset: selected, mode } });
-    });
-    profileEditors.push({ id: p.id, nameInput, getTheme: () => ({ preset: selected, mode }) });
-    box.append(
-      el('div', { class: 'stack' },
-        el('h3', { text: p.name }),
-        field(t('label'), nameInput),
-        field(t('themeColors'), presetGrid),
-        field(t('mode'), modeGroup),
-        el('div', { class: 'form-grid' },
-          el('button', {
-            type: 'button',
-            class: 'btn',
-            text: t('resetTheme'),
-            onclick: () => {
-              updateSelection('paper');
-              mode = 'light';
-              modeGroup.querySelector('input[value="light"]').checked = true;
-              applyTheme({ theme: { preset: 'paper', mode: 'light' } });
-            },
-          })
-        )
-      )
+  const me = currentProfile();
+  const nameInput = textInput(me?.name ?? '', () => {});
+  let selected = PRESET_IDS.includes(me?.theme?.preset) ? me.theme.preset : 'paper';
+  let mode = me?.theme?.mode === 'dark' ? 'dark' : 'light';
+  const presetGrid = el('div', { class: 'preset-grid', role: 'radiogroup', 'aria-label': t('themeColors') });
+  const presetButtons = PRESETS.map((pr) => {
+    const btn = el('button', {
+      type: 'button',
+      class: `preset-btn${pr.id === selected ? ' is-selected' : ''}`,
+      role: 'radio',
+      'aria-checked': pr.id === selected ? 'true' : 'false',
+      onclick: () => updateSelection(pr.id),
+    },
+      el('span', { class: 'preset-dots' }, ...pr.dots.map((c) => el('i', { style: `background:${c}` }))),
+      el('span', { class: 'preset-name', text: t(pr.key) })
     );
-  }
+    return btn;
+  });
+  const updateSelection = (id) => {
+    selected = id;
+    presetButtons.forEach((b, i) => {
+      const on = PRESETS[i].id === id;
+      b.classList.toggle('is-selected', on);
+      b.setAttribute('aria-checked', on ? 'true' : 'false');
+    });
+    applyTheme({ theme: { preset: id, mode } });
+  };
+  presetGrid.append(...presetButtons);
+  const modeGroup = segmented('mode', [['light', t('light')], ['dark', t('dark')]], mode);
+  modeGroup.addEventListener('change', (e) => {
+    mode = e.target.value;
+    applyTheme({ theme: { preset: selected, mode } });
+  });
+  box.append(
+    el('div', { class: 'stack' },
+      el('h3', { text: me?.name ?? t('profile') }),
+      field(t('label'), nameInput),
+      el('h3', { text: t('themeColors') }),
+      presetGrid,
+      field(t('mode'), modeGroup),
+      el('div', { class: 'form-grid' },
+        el('button', {
+          type: 'button',
+          class: 'btn',
+          text: t('resetTheme'),
+          onclick: () => {
+            updateSelection('paper');
+            mode = 'light';
+            modeGroup.querySelector('input[value="light"]').checked = true;
+            applyTheme({ theme: { preset: 'paper', mode: 'light' } });
+          },
+        })
+      )
+    )
+  );
 
   const currencyInput = el('input', { type: 'text', value: state.settings.currencyCode, maxlength: '3' });
   const langGroup = segmented('lang', [['en', 'English'], ['pl', 'Polski']], state.settings.language);
@@ -1094,8 +1175,8 @@ function renderSettings() {
         text: t('save'),
         onclick: (e) => withBusy(e.currentTarget, async () => {
           try {
-            for (const p of profileEditors) {
-              await api('PUT', `/api/profiles/${p.id}`, { name: p.nameInput.value, theme: p.getTheme() });
+            if (me) {
+              await api('PUT', `/api/profiles/${me.id}`, { name: nameInput.value, theme: { preset: selected, mode } });
             }
             await api('PUT', '/api/settings', {
               currencyCode: currencyInput.value.toUpperCase(),

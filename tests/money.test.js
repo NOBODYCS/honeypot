@@ -193,3 +193,30 @@ test('R16/P1: summary is pure - other months data never leaks in', () => {
   const second = computeSummary(input);
   assert.deepEqual(first, second);
 });
+
+test('per-item partnerSharePct overrides salary split for that item, sums stay exact', () => {
+  const s = computeSummary({
+    salaryA: 500000,
+    salaryB: 300000,
+    items: [
+      { kind: 'fixed', label: 'Rent', amountCents: 100000, partnerSharePct: 70 },
+      { kind: 'fixed', label: 'Net', amountCents: 20000, partnerSharePct: -1 },
+    ],
+    expenses: [],
+  });
+  // Rent: B covers 70% = 70000, A 30000. Net: salary split 62.5/37.5 -> A 12500, B 7500.
+  assert.equal(s.fixedShare.B, 77500);
+  assert.equal(s.fixedShare.A, 42500);
+  assert.equal(s.contributions.A + s.contributions.B, s.sharedPlannedTotal);
+});
+
+test('unset partnerSharePct (-1) behaves exactly like the old salary split', () => {
+  const items = [
+    { kind: 'fixed', label: 'Rent', amountCents: 100001, partnerSharePct: -1 },
+    { kind: 'variable', label: 'Food', amountCents: 33333, partnerSharePct: -1 },
+  ];
+  const s = computeSummary({ salaryA: 500000, salaryB: 300000, items, expenses: [] });
+  const direct = splitBySalary(s.sharedPlannedTotal, 500000, 300000);
+  assert.equal(s.contributions.A, direct.a);
+  assert.equal(s.contributions.B, direct.b);
+});

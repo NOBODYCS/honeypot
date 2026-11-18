@@ -48,12 +48,14 @@ live figures, spending log, close), and left/right mirrored side panels with eac
 name + personal expenses list. Settings / History / Leftover log open as slide-over panels
 on the same page and MUST fit on screen at default viewport size without scrolling (internal
 scroll only as a fallback). Every field is editable by either profile at any time while the
-month is open — profile choice is prefill convenience, never a permission. Each profile picks
-one of the predefined FULL-theme presets from Settings (paper / ink / sunrise / berry / ocean /
-contrast — six families, each with a light AND a dark variant via `data-mode`, changing colors,
-fonts, radii, density and shadows together) via the `data-theme` + `data-mode` attributes;
-layout and information stay identical for both profiles — styles only, never layout. Presets
-are pre-verified for contrast; free-form color input is not allowed.
+month is open — profile choice is prefill convenience, never a permission. The theme belongs to the
+PARTNER PROFILE (server-side), never to the browser: Settings shows only the current profile's
+name/theme and MUST NOT let one partner edit the other's. Each profile picks one of the
+predefined FULL-theme presets (paper / ink / sunrise / berry / ocean / contrast — six families,
+each with a light AND a dark variant via `data-mode`, changing colors, fonts, radii, density and
+shadows together) via the `data-theme` + `data-mode` attributes; layout and information stay
+identical for both profiles — styles only, never layout. Presets are pre-verified for contrast;
+free-form color input is not allowed.
 
 ### VIII. i18n from day one
 English UI by default with a language switch from the start; all numbers and dates via
@@ -84,6 +86,11 @@ step.
 - The default palette is the locked design-token set in `public/styles.css` (one base +
   1–2 accents, warm paper base, distinctive font pairing per G6). Token changes go through
   the G6 review with the measured contrast ratios of every affected pair in the PR.
+- Plan editing is LIVE: figures recompute client-side from the draft on every keystroke
+  (shared `money.js` served at `/shared/money.js`) and autosave debounced — no per-form Save
+  button; Settings has exactly ONE Save button. Every shared cost item (fixed/variable) has an
+  editable partner-share % (empty = salary split); the split/coverage bars and per-partner
+  % -of-own-income update immediately.
 - The month view MUST make the money split obvious at a glance: a share bar (% per side of the
   shared plan, adjustable via the salary inputs), a live coverage bar (who fronted what % of
   actual spending vs the pot — the payer pick on each expense), per-partner leftover rows, the
@@ -133,10 +140,16 @@ change, a semantic version bump (MAJOR for removed/redefined principles, MINOR f
 principles/sections, PATCH for clarifications), and a change-log entry. All PRs must verify
 compliance; any complexity beyond the principles above must be justified in the PR.
 
-**Version**: 1.3.0 | **Ratified**: 2026-11-17 | **Last Amended**: 2026-11-18
+**Version**: 1.4.0 | **Ratified**: 2026-11-17 | **Last Amended**: 2026-11-18
 
 ## Change Log
 
+- **1.4.0 (2026-11-18)** — MINOR: theme confirmed as per-partner-profile (not per browser);
+  Settings scoped to the current user only, single Save button. Live calculations: figures
+  recompute from the draft on every keystroke + debounced autosave (no plan Save button).
+  Per-item partner-share % on fixed/variable costs (-1 = salary split; guarded table rebuild
+  migration). Personal expenses render as compact cards — no horizontal scroll in side panels.
+  "ISO 4217" removed from the currency label.
 - **1.3.0 (2026-11-18)** — MINOR: six preset families (paper/ink/sunrise/berry/ocean/
   contrast), each with light + dark mode. Split semantics made explicit in the UI: share bar =
   % of the shared plan by salary (not of the pot), fairness = equal % of own income, hover/focus
