@@ -374,6 +374,10 @@ h1, h2, h3 {
   align-items: start;
 }
 
+.screen > * {
+  min-width: 0;
+}
+
 @media (max-width: 64em) {
   .screen {
     grid-template-columns: 1fr;
@@ -725,6 +729,7 @@ th, td {
   padding: var(--sp-2) var(--sp-3);
   border-bottom: 1px solid var(--line);
   vertical-align: middle;
+  overflow-wrap: anywhere;
 }
 
 thead th {
@@ -736,7 +741,6 @@ thead th {
   color: var(--ink-3);
   border-bottom: 1px solid var(--line-2);
   padding-top: 0;
-  white-space: nowrap;
 }
 
 tbody tr:last-child td {
@@ -999,8 +1003,24 @@ figure.fig .money {
 
 .personal-row {
   display: flex;
+  flex-wrap: wrap;
   gap: var(--sp-2);
   align-items: end;
+}
+
+.split-row .split-sep {
+  color: var(--ink-3);
+  align-self: center;
+}
+
+.split-row input[type='number'] {
+  width: 4.5rem;
+  flex-shrink: 0;
+}
+
+.btn-mini {
+  padding: 0 var(--sp-2);
+  font-size: 0.8rem;
 }
 
 .personal-row input[type='text'] {
@@ -1022,7 +1042,7 @@ figure.fig .money {
 }
 
 .personal-pct input {
-  width: 4.5rem;
+  width: 4rem;
   flex-shrink: 0;
 }
 
@@ -1150,6 +1170,22 @@ figure.fig .money {
 }
 
 /* ---- settings layout ---- */
+
+#settings-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+}
+
+.settings-section {
+  background: var(--surface);
+  border-radius: var(--radius-l);
+  padding: var(--sp-5);
+  box-shadow: var(--shadow-1);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+}
 
 #settings-body .stack > * + * {
   margin-top: var(--sp-4);

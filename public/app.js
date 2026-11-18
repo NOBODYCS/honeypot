@@ -98,6 +98,12 @@ const I18N = {
     tipSplit: "The bar shows each side’s share of the shared costs, proportional to salary — not a share of the pot. The pot only pays; it owns nothing.",
     tipCoverage: "Of the money spent so far: who fronted it personally vs what the pot paid.",
     tipIncome: "Fair share means both partners spend the same % of their own salary on shared costs.",
+    splitLabel: 'Split',
+    splitHint: 'Split this cost between {a} and {b} — blank = automatic split by salary.',
+    auto: 'auto',
+    sectionProfile: 'Your profile',
+    profileHint: 'Name, theme and mode apply only to you — the other partner has their own.',
+    sectionApp: 'App',
   },
   pl: {
     profileLabel: 'Aktualny profil',
@@ -194,6 +200,12 @@ const I18N = {
     tipSplit: "Pasek pokazuje udział każdej strony w kosztach wspólnych — proporcjonalny do pensji, nie do puli. Pula tylko opłaca wydatki.",
     tipCoverage: "Spośród już wydanych pieniędzy: kto zapłacił z własnej kieszeni, a co pokryła pula.",
     tipIncome: 'Uczciwy podział oznacza, że obie osoby przeznaczają taki sam % własnej pensji na koszty wspólne.',
+    splitLabel: 'Podział',
+    splitHint: 'Podziel ten koszt między {a} a {b} — puste = automatyczny podział wg pensji.',
+    auto: 'auto',
+    sectionProfile: 'Twój profil',
+    profileHint: 'Nazwa, motyw i tryb dotyczą tylko Ciebie — druga osoba ma własne.',
+    sectionApp: 'Aplikacja',
   },
 };
 
@@ -223,6 +235,9 @@ const el = (tag, attrs = {}, ...children) => {
   }
   return node;
 };
+
+/* replaceChildren/append stringify raw null/false into visible text — filter them out. */
+const kids = (...nodes) => nodes.flat().filter((n) => n != null && n !== false);
 
 function t(key, params) {
   let str = I18N[state.settings.language]?.[key] ?? I18N.en[key] ?? key;
@@ -497,55 +512,142 @@ function renderMonth() {
   $('#btn-close-month').disabled = !editable();
 }
 
-function itemRows(kind, owner, listEl) {
+function clampPct(v) {
+  return Math.max(0, Math.min(100, Math.round(Number(v) || 0)));
+}
+
+function pctInput({ value, placeholder, aria, side, disabled, oninput }) {
+  return el('input', {
+    type: 'number',
+    min: '0',
+    max: '100',
+    inputmode: 'numeric',
+    placeholder: placeholder || undefined,
+    'aria-label': aria,
+    'data-side': side,
+    value,
+    disabled,
+    oninput,
+  });
+}
+
+function itemCard(item, idx, kind, owner) {
   const canEdit = editable();
+  const nameA = state.profiles[0]?.name ?? 'A';
+  const nameB = state.profiles[1]?.name ?? 'B';
+  const removeBtn = el('button', {
+    type: 'button',
+    class: 'btn btn-danger',
+    text: t('remove'),
+    disabled: !canEdit,
+    onclick: () => {
+      state.draft.items.splice(idx, 1);
+      renderPlan();
+      renderPersonal(1, $('#personal-list-a'));
+      renderPersonal(2, $('#personal-list-b'));
+      scheduleAutosave();
+    },
+  });
+  const row1 = el('div', { class: 'personal-row' },
+    textInput(item.label, (v) => { item.label = v; scheduleAutosave(); }, { disabled: !canEdit }),
+    moneyInput(item.amountCents, (v) => { item.amountCents = v; scheduleAutosave(); }, { disabled: !canEdit }));
+
+  let row2;
+  if (kind === 'personal') {
+    const partnerName = owner === 1 ? nameB : nameA;
+    row2 = el('div', { class: 'personal-row' },
+      el('label', { class: 'personal-pct' },
+        el('span', { class: 'field-label', text: `${partnerName} %` }),
+        pctInput({
+          value: item.partnerSharePct >= 0 ? String(item.partnerSharePct) : '',
+          aria: t('partnerShare'),
+          side: 'partner',
+          disabled: !canEdit,
+          oninput: (e) => {
+            const v = e.target.value;
+            item.partnerSharePct = v === '' ? -1 : clampPct(v);
+            scheduleAutosave();
+          },
+        })),
+      removeBtn);
+  } else {
+    const pct = item.partnerSharePct ?? -1;
+    const sA = state.draft.salaries[1] ?? 0;
+    const sB = state.draft.salaries[2] ?? 0;
+    const total = sA + sB;
+    const autoA = total > 0 ? String(Math.round((sA / total) * 100)) : '';
+    const autoB = total > 0 ? String(100 - Math.round((sA / total) * 100)) : '';
+    const aInput = pctInput({
+      value: pct >= 0 ? String(100 - pct) : '',
+      placeholder: autoA,
+      aria: `${nameA} %`,
+      side: 'a',
+      disabled: !canEdit,
+      oninput: (e) => {
+        const v = e.target.value;
+        if (v === '') {
+          item.partnerSharePct = -1;
+          aInput.value = '';
+          bInput.value = '';
+        } else {
+          const av = clampPct(v);
+          item.partnerSharePct = 100 - av;
+          aInput.value = String(av);
+          bInput.value = String(100 - av);
+        }
+        scheduleAutosave();
+      },
+    });
+    const bInput = pctInput({
+      value: pct >= 0 ? String(pct) : '',
+      placeholder: autoB,
+      aria: `${nameB} %`,
+      side: 'b',
+      disabled: !canEdit,
+      oninput: (e) => {
+        const v = e.target.value;
+        if (v === '') {
+          item.partnerSharePct = -1;
+          aInput.value = '';
+          bInput.value = '';
+        } else {
+          const bv = clampPct(v);
+          item.partnerSharePct = bv;
+          bInput.value = String(bv);
+          aInput.value = String(100 - bv);
+        }
+        scheduleAutosave();
+      },
+    });
+    const autoBtn = el('button', {
+      type: 'button',
+      class: 'btn btn-mini',
+      text: t('auto'),
+      disabled: !canEdit,
+      onclick: () => {
+        item.partnerSharePct = -1;
+        aInput.value = '';
+        bInput.value = '';
+        scheduleAutosave();
+      },
+    });
+    row2 = el('div', { class: 'personal-row split-row' },
+      el('span', { class: 'field-label', text: t('splitLabel') }),
+      aInput,
+      el('span', { class: 'split-sep', text: '/' }),
+      bInput,
+      autoBtn,
+      removeBtn);
+  }
+  return el('div', { class: 'personal-item' }, row1, row2);
+}
+
+function planItemsOf(kind, owner) {
   return state.draft.items
     .map((item, idx) => ({ item, idx }))
     .filter(({ item }) =>
       kind === 'personal' ? item.kind === 'personal' && item.ownerProfileId === owner : item.kind === kind
-    )
-    .map(({ item, idx }) => {
-      const cells = [
-        textInput(item.label, (v) => { item.label = v; scheduleAutosave(); }, { disabled: !canEdit }),
-        moneyInput(item.amountCents, (v) => { item.amountCents = v; scheduleAutosave(); }, { disabled: !canEdit }),
-      ];
-      const pctInput = (shared) => el('input', {
-        type: 'number',
-        min: '0',
-        max: '100',
-        inputmode: 'numeric',
-        placeholder: shared ? 'auto' : undefined,
-        'aria-label': shared ? `${state.profiles[1]?.name ?? 'B'} %` : t('partnerShare'),
-        value: item.partnerSharePct >= 0 ? item.partnerSharePct : '',
-        disabled: !canEdit,
-        oninput: (e) => {
-          const v = e.target.value;
-          item.partnerSharePct = v === '' ? -1 : Math.max(0, Math.min(100, Number(v) || 0));
-          scheduleAutosave();
-        },
-      });
-      if (kind === 'personal') {
-        cells.push(pctInput(false));
-      } else {
-        cells.push(pctInput(true));
-      }
-      cells.push(
-        el('button', {
-          type: 'button',
-          class: 'btn btn-danger',
-          text: t('remove'),
-          disabled: !canEdit,
-          onclick: () => {
-            state.draft.items.splice(idx, 1);
-            renderPlan();
-            renderPersonal(1, $('#personal-list-a'));
-            renderPersonal(2, $('#personal-list-b'));
-            scheduleAutosave();
-          },
-        })
-      );
-      return el('tr', {}, ...cells.map((c) => el('td', {}, c)));
-    });
+    );
 }
 
 function itemTable(headCells, rows, closedText, emptyText) {
@@ -597,21 +699,21 @@ function renderPlan() {
     el('p', { class: 'hint', id: 'plan-share-hint', text: shareHint() })
   );
 
-  const fixed = $('#plan-fixed');
-  fixed.replaceChildren(
-    el('h3', { text: t('fixedShared') }),
-    itemTable([t('label'), t('amount'), `${state.profiles[1]?.name ?? 'B'} %`], itemRows('fixed'), canEdit ? null : t('monthClosed'), t('noItems')),
-    canEdit
-      ? el('button', { type: 'button', class: 'btn', text: t('add'), onclick: () => addItem('fixed') })
-      : el('p', { class: 'hint', text: t('monthClosed') })
-  );
-
-  const variable = $('#plan-variable');
-  variable.replaceChildren(
-    el('h3', { text: t('variableShared') }),
-    itemTable([t('label'), t('amount'), `${state.profiles[1]?.name ?? 'B'} %`], itemRows('variable'), canEdit ? null : t('monthClosed'), t('noItems')),
-    canEdit ? el('button', { type: 'button', class: 'btn', text: t('add'), onclick: () => addItem('variable') }) : null
-  );
+  const nameA = state.profiles[0]?.name ?? 'A';
+  const nameB = state.profiles[1]?.name ?? 'B';
+  for (const kind of ['fixed', 'variable']) {
+    const box = $(`#plan-${kind}`);
+    const rows = planItemsOf(kind);
+    box.replaceChildren(...kids(
+      el('h3', { text: kind === 'fixed' ? t('fixedShared') : t('variableShared') }),
+      el('p', { class: 'hint', text: t('splitHint', { a: nameA, b: nameB }) }),
+      ...rows.map(({ item, idx }) => itemCard(item, idx, kind)),
+      rows.length ? null : el('p', { class: 'empty-row', text: t('noItems') }),
+      canEdit
+        ? el('button', { type: 'button', class: 'btn', text: t('add'), onclick: () => addItem(kind) })
+        : el('p', { class: 'hint', text: t('monthClosed') })
+    ));
+  }
 }
 
 function liveSummary() {
@@ -672,50 +774,15 @@ async function autosave() {
 
 function renderPersonal(owner, box) {
   const canEdit = editable();
-  const rows = state.draft.items
-    .map((item, idx) => ({ item, idx }))
-    .filter(({ item }) => item.kind === "personal" && item.ownerProfileId === owner)
-    .map(({ item, idx }) =>
-      el("div", { class: "personal-item" },
-        el("div", { class: "personal-row" },
-          textInput(item.label, (v) => { item.label = v; scheduleAutosave(); }, { disabled: !canEdit }),
-          moneyInput(item.amountCents, (v) => { item.amountCents = v; scheduleAutosave(); }, { disabled: !canEdit })),
-        el("div", { class: "personal-row" },
-          el("label", { class: "personal-pct" },
-            el("span", { class: "field-label", text: t("partnerShare") }),
-            el("input", {
-              type: "number",
-              min: "0",
-              max: "100",
-              inputmode: "numeric",
-              value: item.partnerSharePct >= 0 ? item.partnerSharePct : "",
-              disabled: !canEdit,
-              oninput: (e) => {
-                const v = e.target.value;
-                item.partnerSharePct = v === "" ? -1 : Math.max(0, Math.min(100, Number(v) || 0));
-                scheduleAutosave();
-              },
-            })),
-          el("button", {
-            type: "button",
-            class: "btn btn-danger",
-            text: t("remove"),
-            disabled: !canEdit,
-            onclick: () => {
-              state.draft.items.splice(idx, 1);
-              renderPlan();
-              renderPersonal(1, $("#personal-list-a"));
-              renderPersonal(2, $("#personal-list-b"));
-              scheduleAutosave();
-            },
-          }))));
-  box.replaceChildren(
-    ...(rows.length ? rows : [el("p", { class: "empty-row", text: t("noItems") })]),
-    !canEdit && state.month ? el("p", { class: "empty-row", text: t("monthClosed") }) : null,
+  const rows = planItemsOf('personal', owner);
+  box.replaceChildren(...kids(
+    ...rows.map(({ item, idx }) => itemCard(item, idx, 'personal', owner)),
+    rows.length ? null : el('p', { class: 'empty-row', text: t('noItems') }),
+    !canEdit && state.month ? el('p', { class: 'empty-row', text: t('monthClosed') }) : null,
     canEdit
-      ? el("button", { type: "button", class: "btn", text: t("add"), onclick: () => addItem("personal", owner) })
+      ? el('button', { type: 'button', class: 'btn', text: t('add'), onclick: () => addItem('personal', owner) })
       : null
-  );
+  ));
 }
 
 /* ---------- live figures (US3) ---------- */
@@ -1104,10 +1171,11 @@ function renderSettings() {
     applyTheme({ theme: { preset: selected, mode } });
   });
   box.append(
-    el('div', { class: 'stack' },
-      el('h3', { text: me?.name ?? t('profile') }),
+    el('section', { class: 'settings-section' },
+      el('h3', { text: t('sectionProfile') }),
+      el('p', { class: 'hint', text: t('profileHint') }),
       field(t('label'), nameInput),
-      el('h3', { text: t('themeColors') }),
+      el('p', { class: 'field-label', text: t('themeColors') }),
       presetGrid,
       field(t('mode'), modeGroup),
       el('div', { class: 'form-grid' },
@@ -1126,7 +1194,7 @@ function renderSettings() {
     )
   );
 
-  const currencyInput = el('input', { type: 'text', value: state.settings.currencyCode, maxlength: '3' });
+  const currencyInput = el('input', { type: 'text', value: state.settings.currencyCode, maxlength: '3', placeholder: 'PLN', 'aria-label': t('currency') });
   const langGroup = segmented('lang', [['en', 'English'], ['pl', 'Polski']], state.settings.language);
   const catBox = el('div', { class: 'stack' });
   const renderCats = () => {
@@ -1159,16 +1227,18 @@ function renderSettings() {
   };
   renderCats();
   box.append(
-    el('div', { class: 'stack' },
-      el('h3', { text: t('currency') }),
+    el('section', { class: 'settings-section' },
+      el('h3', { text: t('sectionApp') }),
       el('div', { class: 'form-grid' },
         field(t('currency'), currencyInput),
         field(t('language'), langGroup)
-      ),
+      )
+    ),
+    el('section', { class: 'settings-section' },
       el('h3', { text: t('categories') }),
       catBox
     ),
-    el('div', { class: 'form-grid' },
+    el('div', { class: 'form-grid settings-save' },
       el('button', {
         type: 'button',
         class: 'btn btn-primary btn-lg',
@@ -1223,7 +1293,7 @@ async function renderLeftovers(historyData) {
   const categorySelect = el('select', {},
     ...state.settings.categories.map((c) => el('option', { value: c, text: c }))
   );
-  box.replaceChildren(
+  box.replaceChildren(...kids(
     el('p', { class: 'hint', text: `${ym} — ${editableMonth ? t('editHint') : t('readOnly')}` }),
     editableMonth
       ? el('div', { class: 'form-grid' },
@@ -1278,7 +1348,7 @@ async function renderLeftovers(historyData) {
           )
         )
       )
-    ), null, t('nothingYet')
+    ), null, t('nothingYet'))
   );
 }
 

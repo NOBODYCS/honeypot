@@ -115,6 +115,19 @@ step.
   never `user-scalable=no`), button labels may wrap (no `white-space: nowrap` on
   interactive text), and pointer targets are >= 24x24 CSS px (SC 2.5.8), bumped to ~44px
   under `@media (pointer: coarse)`.
+- No two-dimensional scrolling in panels or cards at default size: item rows are cards with
+  `flex-wrap: wrap`, table headers never `white-space: nowrap`, grid children are
+  `min-width: 0`; `.table-wrap { overflow-x: auto }` is a fallback for wide data tables
+  only, never a trigger in side panels or the plan.
+- DOM building never passes raw `null`/`false` into `replaceChildren`/`append` (they render
+  as the literal text "null") — always filter through the `kids()` helper. Encoded as a
+  static guard test.
+- Plan items (fixed/variable) render as cards with a TWO-SIDED split editor: both partners'
+  % are visible and editable side by side, kept in sync to sum to 100, blank = automatic
+  salary split (with an "auto" reset). Personal items show the partner's % labeled with the
+  partner's name.
+- Settings is grouped into labeled sections — "Your profile" (name/theme/mode, per-profile
+  only), "App" (currency/language), "Expense categories" — with exactly ONE Save button.
 
 ## Technology & Constraints
 
@@ -149,10 +162,17 @@ change, a semantic version bump (MAJOR for removed/redefined principles, MINOR f
 principles/sections, PATCH for clarifications), and a change-log entry. All PRs must verify
 compliance; any complexity beyond the principles above must be justified in the PR.
 
-**Version**: 1.5.0 | **Ratified**: 2026-11-17 | **Last Amended**: 2026-11-18
+**Version**: 1.6.0 | **Ratified**: 2026-11-17 | **Last Amended**: 2026-11-18
 
 ## Change Log
 
+- **1.6.0 (2026-11-18)** — MINOR: fixed literal "null" text from raw nulls passed to
+  `replaceChildren` (now filtered via `kids()`, guarded by tests); plan items (fixed/variable)
+  render as cards with a two-sided A%/B% split editor (synced to 100, blank = salary split,
+  "auto" reset) instead of a cramped table with a single % column; killed horizontal
+  scrolling (wrapping rows, no nowrap headers, shrinkable grid children); Settings grouped
+  into labeled sections (Your profile / App / Categories) with one Save. Guards extended in
+  `tests/ui-static.test.js`.
 - **1.5.0 (2026-11-18)** — MINOR: added Principle X automation clause: UI/UX guards as
   tests (`tests/ui-static.test.js`: i18n, contrast per preset×mode, button wiring, scaling,
   scoping, autosave) + CI workflow + PR template checklist, so regressions are caught without

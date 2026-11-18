@@ -41,7 +41,7 @@ test('i18n: every t() key and data-i18n(-aria) key exists; no dead keys', () => 
 });
 
 test('i18n: no hardcoded user-facing strings outside the dictionary', () => {
-  const allowed = new Set(['i']);
+  const allowed = new Set(['i', '/']);
   for (const m of app.matchAll(/text: '([^']*)'/g)) {
     assert.ok(allowed.has(m[1]), `hardcoded text: '${m[1]}'`);
   }
@@ -141,8 +141,66 @@ test('exactly one Save button in settings; plan autosaves (no savePlan)', () => 
 
 test('personal expenses use cards (no table in narrow side panels)', () => {
   assert.ok(css.includes('.personal-item'));
-  const fn = app.slice(app.indexOf('function renderPersonal'), app.indexOf('function renderPlan'));
+  const start = app.indexOf('function renderPersonal');
+  const fn = app.slice(start, app.indexOf('\nfunction ', start + 1));
+  assert.ok(fn.includes('itemCard'), 'renderPersonal must render item cards');
   assert.ok(!fn.includes('itemTable'), 'renderPersonal must not use a wide table');
+});
+
+test('dom: replaceChildren never receives raw null/false (kids filter)', () => {
+  assert.ok(app.includes('const kids ='), 'kids() filter helper missing');
+  let i = 0;
+  while ((i = app.indexOf('replaceChildren(', i)) !== -1) {
+    let depth = 0;
+    let j = i + 'replaceChildren('.length;
+    for (; j < app.length; j++) {
+      if (app[j] === '(') depth++;
+      else if (app[j] === ')') {
+        if (depth === 0) break;
+        depth--;
+      }
+    }
+    const call = app.slice(i, j + 1);
+    let d = 0;
+    let k = 'replaceChildren('.length;
+    for (; k < call.length - 1; k++) {
+      if (call[k] === '(') d++;
+      else if (call[k] === ')') d--;
+      else if (d === 0 && (call.startsWith(': null', k) || call.startsWith(': false', k))) {
+        assert.ok(false, `raw null/false as a direct replaceChildren argument: ${call.slice(0, 100)}`);
+      }
+    }
+    i = j + 1;
+  }
+});
+
+test('plan items are cards with a two-sided split editor (both partners visible)', () => {
+  const start = app.indexOf('function renderPlan');
+  const fn = app.slice(start, app.indexOf('\nfunction ', start + 1));
+  assert.ok(fn.includes('itemCard'), 'renderPlan must render item cards');
+  assert.ok(!fn.includes('itemTable'), 'renderPlan must not render plan rows as a table');
+  assert.ok(app.includes("side: 'a'") && app.includes("side: 'b'"), 'split editor needs A% and B% inputs');
+  assert.ok(app.includes("'data-side': side"), 'split inputs must be marked data-side');
+  assert.ok(app.includes("class: 'btn btn-mini'"), 'auto (salary split) reset button missing');
+});
+
+test('every dynamically created button has a wired onclick', () => {
+  let i = 0;
+  let n = 0;
+  while ((i = app.indexOf("el('button'", i)) !== -1) {
+    const chunk = app.slice(i, i + 400);
+    assert.ok(chunk.includes('onclick'), `button without onclick near: ${chunk.slice(0, 90)}`);
+    n++;
+    i += 10;
+  }
+  assert.ok(n >= 10, 'expected at least 10 dynamic buttons');
+});
+
+test('layout: rows wrap, table headers never nowrap, grid children can shrink (no horizontal scroll)', () => {
+  assert.ok(/\.personal-row\s*\{[^}]*flex-wrap:\s*wrap/.test(css), '.personal-row must wrap');
+  assert.ok(!/thead th\s*\{[^}]*white-space:\s*nowrap/.test(css), 'thead th must not nowrap');
+  assert.ok(/\.screen\s*>\s*\*\s*\{[^}]*min-width:\s*0/.test(css), '.screen children must be shrinkable');
+  assert.ok(css.includes('.settings-section'), 'settings sections missing');
 });
 
 test('per-item partner share: -1 sentinel, migration, validation', () => {

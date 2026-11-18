@@ -244,3 +244,31 @@ So UI/UX regressions are caught without anyone spelling them out:
   1.4.12 Text Spacing, 2.5.8 Target Size (24x24 px min, 44px on coarse pointers per Modern
   Web Guidance); Modern Web Guidance `respect-os-text-scale` (`<meta name="text-scale"
   content="scale">`, rem units, min-height over height, no root font-size override).
+
+## Round 5 — full review pass (2026-11-18, found by reading the shipped code end to end)
+
+### Found (concrete)
+1. **Literal "null" rendered next to the Add button** in personal expenses (and in the
+   variable-cost section of a closed month, and in the leftover log): `replaceChildren(...,
+   cond ? node : null)` — the DOM stringifies a raw `null` argument into the text "null".
+   Fixed with a `kids()` filter helper used at every `replaceChildren` call site; a static
+   guard test now fails if a raw `null`/`false` is ever passed directly to `replaceChildren`.
+2. **Only one partner % per cost, cramped into the cost table.** Fixed/variable plan items
+   were a 4-column table (label / amount / "B %" / remove) with `thead th { white-space:
+   nowrap }` and `.table-wrap { overflow-x: auto }` — the % column lived in the same row as
+   the costs, scaled badly, and forced horizontal scrolling in the center card. Plan items
+   now render as cards with a two-sided split editor: `A%` and `B%` inputs side by side,
+   kept in sync to sum to 100, blank = automatic salary split (placeholders show the
+   computed salary %), plus an "auto" reset. Personal items keep one % but it is labeled
+   with the partner's actual name.
+3. **Horizontal scrolling in the side panels**: `.personal-row` did not wrap, so the
+   % label + 4.5rem input + Remove button overflowed the 230px-min panel. Rows now wrap,
+   the % input is narrower, `thead th` no longer nowraps, `td` wraps anywhere, and
+   `.screen > *` is `min-width: 0`.
+4. **Settings sections were indistinguishable** (flat stacks of h3s). Now three labeled
+   sections: "Your profile" (with a hint that name/theme/mode are per-profile only),
+   "App" (currency/language), "Expense categories". Still exactly one Save button.
+5. Guard suite extended: kids()/replaceChildren scan, plan-cards-not-tables, both `data-side`
+   split inputs, every dynamic `el('button'` has `onclick`, CSS wrap/nowrap/min-width rules.
+   `npm test`: 43/43 pass. API smoke test: per-item `partnerSharePct` (-1/25/50/100) round-trips
+   and contributions sum exactly.
