@@ -331,6 +331,22 @@ test('tooltips: every live-figure caption key has a matching tooltip key in BOTH
 
 /* ---------- layout hardening: no clipping / no side scroll / scaling ---------- */
 
+test('layout: [hidden] always wins over author display rules (badges/empty states must hide)', () => {
+  assert.ok(/\[hidden\]\s*\{[^}]*display:\s*none\s*!important/.test(css), 'global [hidden] !important rule missing — .badge/.empty display rules would override it');
+  assert.ok(/\.badge\s*\{[^}]*display:/.test(css) && /\.empty\s*\{[^}]*display:/.test(css), 'sanity: badge/empty set display, so the [hidden] guard is load-bearing');
+});
+
+test('layout: wide screens get a wider layout tier (1440p fullscreen must not be a narrow strip)', () => {
+  assert.ok(/@media \(min-width: 100em\)\s*\{[^@]*\.screen\s*\{[^}]*max-width:\s*1720px/.test(css), 'wide-screen .screen tier missing');
+  assert.ok(/@media \(min-width: 100em\)[\s\S]*?\.dialog-panel\s*\{[^}]*min\(760px/.test(css), 'wide dialog width missing');
+});
+
+test('layout: phone-width tables stack into labeled rows (no side scroll, no mid-word breaks)', () => {
+  assert.ok(/@media \(max-width: 40em\)\s*\{[^@]*\.table-wrap thead\s*\{[^}]*display:\s*none/.test(css), 'stacked table must hide thead at <=40em');
+  assert.ok(css.includes('content: attr(data-th)'), 'stacked cells must show their header via data-th');
+  assert.ok(app.includes('td.dataset.th = heads[i]'), 'itemTable must stamp data-th on cells');
+});
+
 test('layout: tooltips flip inside viewport AND dialog bounds; amounts wrap at phone width; chips wrap', () => {
   assert.ok(app.includes("trigger.closest('dialog')"), 'tooltip must respect dialog clip bounds');
   assert.ok(app.includes("setProperty('right', '0')") && app.includes("setProperty('bottom', 'calc(100% + 6px)')"), 'tooltip must flip left/up near edges');

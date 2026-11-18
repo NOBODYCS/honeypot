@@ -204,10 +204,17 @@ change, a semantic version bump (MAJOR for removed/redefined principles, MINOR f
 principles/sections, PATCH for clarifications), and a change-log entry. All PRs must verify
 compliance; any complexity beyond the principles above must be justified in the PR.
 
-**Version**: 2.1.1 | **Ratified**: 2026-11-17 | **Last Amended**: 2026-11-18
+**Version**: 2.1.3 | **Ratified**: 2026-11-17 | **Last Amended**: 2026-11-18
 
 ## Change Log
 
+- **2.1.2 (2026-11-18)** — PATCH: `[hidden] { display: none !important }` global rule (badges /
+  empty states with author display rules were not hiding — e.g. "No month open" overlaid the
+  open month); at ≤40em tables stack into labeled rows via data-th (no side scroll, no mid-word
+  breaks); figure labels wrap. Wide screens (>=100em, e.g. 1440p fullscreen) get a wider
+  layout tier (max-width 1720px, wider side columns, wider dialogs). Verified with real
+  browser screenshots at 2560x1440, 1360px, 320px and 200% text scale: zero overflowing
+  elements, no side scroll, tooltips not clipped.
 - **2.1.1 (2026-11-18)** — PATCH: layout hardening after owner visual report (clipping /
   overlap / bad wrapping): tooltips now flip left/up to stay inside the viewport AND inside
   scrolling dialogs (measured via getBoundingClientRect, CSSOM only); `td.num` nowrap applies

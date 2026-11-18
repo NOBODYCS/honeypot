@@ -985,6 +985,13 @@ function planItemsOf(kind, owner) {
 function itemTable(headCells, rows, closedText, emptyText) {
   const table = el('table', {});
   const headRow = el('tr', {}, ...headCells.map((h) => el('th', {}, h)));
+  /* data-th feeds the stacked phone-width layout (td::before shows the header) */
+  const heads = headCells.map((h) => (typeof h === 'string' ? h : h.textContent ?? ''));
+  for (const row of rows) {
+    [...row.children].forEach((td, i) => {
+      if (td.tagName === 'TD') td.dataset.th = heads[i] ?? '';
+    });
+  }
   table.append(el('thead', {}, headRow), el('tbody', {}, ...rows));
   const wrap = el('div', { class: 'table-wrap' });
   wrap.append(table);

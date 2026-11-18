@@ -389,6 +389,20 @@ h1, h2, h3 {
   }
 }
 
+/* wide screens (e.g. 1440p fullscreen): use the space instead of a narrow centered strip */
+@media (min-width: 100em) {
+  .screen {
+    max-width: 1720px;
+    grid-template-columns: minmax(300px, 360px) minmax(560px, 1fr) minmax(300px, 360px);
+    gap: var(--sp-8);
+    padding: var(--sp-10) var(--sp-8);
+  }
+
+  .dialog-panel {
+    width: min(760px, 100vw);
+  }
+}
+
 @media (pointer: coarse) {
   .btn,
   .panel-close,
@@ -715,6 +729,11 @@ select {
 
 /* ---- tables ---- */
 
+/* the hidden attribute must always win over author display rules (badges, empty states) */
+[hidden] {
+  display: none !important;
+}
+
 .table-wrap {
   overflow-x: auto;
 }
@@ -723,6 +742,43 @@ table {
   border-collapse: collapse;
   width: 100%;
   font-size: 0.92rem;
+}
+
+/* at phone width tables become stacked rows (header shown per cell) — never side-scroll,
+   never break words mid-way */
+@media (max-width: 40em) {
+  .table-wrap table {
+    font-size: 0.85rem;
+  }
+  .table-wrap thead {
+    display: none;
+  }
+  .table-wrap tr {
+    display: block;
+    padding: var(--sp-2) 0;
+    border-bottom: 1px solid var(--line);
+  }
+  .table-wrap td {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: var(--sp-3);
+    border-bottom: none;
+    padding: var(--sp-1) 0;
+    overflow-wrap: break-word;
+  }
+  .table-wrap td::before {
+    content: attr(data-th);
+    font-size: var(--font-size-micro);
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+  }
+  .table-wrap td.num {
+    text-align: right;
+    white-space: nowrap;
+  }
 }
 
 th, td {
@@ -950,9 +1006,10 @@ figure.fig .money {
 
 .fig-row {
   display: flex;
+  flex-wrap: wrap;
   justify-content: space-between;
   align-items: baseline;
-  gap: var(--sp-3);
+  gap: var(--sp-1) var(--sp-3);
   padding: var(--sp-1) 0;
   border-bottom: 1px solid var(--line);
 }
@@ -964,6 +1021,8 @@ figure.fig .money {
 .fig-label {
   color: var(--ink-2);
   font-size: 0.88rem;
+  overflow-wrap: break-word;
+  min-width: 0;
 }
 
 .fig-row .money {
@@ -1055,8 +1114,14 @@ figure.fig .money {
 .personal-pct {
   display: inline-flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 6px;
   flex: 1;
+  min-width: 0;
+}
+
+.personal-pct .field-label {
+  overflow-wrap: break-word;
   min-width: 0;
 }
 
