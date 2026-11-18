@@ -6,6 +6,11 @@ This document follows anonymization rules A1–A5 and is safe to store in the pu
 
 ## Change log (vs stage-1 spec)
 
+- 2026-11-18: figure explanations are user-facing product behavior — every live figure and
+  close/history figure carries a plain caption plus a tooltip with a worked example computed
+  from live numbers (see constitution Principle X / 1.10.0). Wording must stay aligned with
+  R1–R16 (fixed costs auto-paid by the pot, pot pays pot-paid expenses).
+
 - Cash flow made explicit: shared-pot model (R8 amended). Expenses without a payer are
   pot-paid and split by share; only payer-tagged ("fronted") expenses produce a settle-up
   line, and settle-up lines always sum to zero.

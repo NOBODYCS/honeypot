@@ -282,6 +282,24 @@ test('tooltips: every field-label i18n key has a matching tip<Key> key in BOTH e
   }
 });
 
+test('tooltips: every live-figure caption key has a matching tooltip key in BOTH en and pl, with live-example placeholders', () => {
+  const { en, pl } = i18n();
+  const figureKeys = [
+    'transferAfterPayday', 'ofIncome', 'guaranteedLeft', 'plannedLeft', 'projectedLeft',
+    'potBalance', 'settleUp', 'splitOfPlan', 'coversSpending', 'fairIncome', 'contributions', 'paid',
+  ];
+  for (const k of figureKeys) {
+    const tipKey = `tip${k[0].toUpperCase()}${k.slice(1)}`;
+    assert.ok(tipKey in en && tipKey in pl, `figure caption ${k} needs ${tipKey} in en+pl`);
+    /* worked mini example: the tip must carry at least one numeric placeholder */
+    assert.ok(/\{(salary|plan|amount|left|balance|spent|fixed|ia|ib|pct|ca|cb|fa|fb|fp)\}/.test(en[tipKey]), `${tipKey} (en) lacks a live-number placeholder`);
+    assert.ok(/\{(salary|plan|amount|left|balance|spent|fixed|ia|ib|pct|ca|cb|fa|fb|fp)\}/.test(pl[tipKey]), `${tipKey} (pl) lacks a live-number placeholder`);
+  }
+  /* live figures must actually feed the params (not static text) */
+  assert.ok(app.includes('function figTipParams'), 'figure tooltips must compute live example params');
+  assert.ok(app.includes("figRow('potBalance'") && app.includes("tipWrap('splitOfPlan', 'tipSplitOfPlan', {"), 'figures must pass live params to their tips');
+});
+
 /* ---------- round 7 guards: audit fixes ---------- */
 
 test('create-month: header New month button wired, next-free ym picker, no fake month option', () => {

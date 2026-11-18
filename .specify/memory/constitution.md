@@ -199,10 +199,16 @@ change, a semantic version bump (MAJOR for removed/redefined principles, MINOR f
 principles/sections, PATCH for clarifications), and a change-log entry. All PRs must verify
 compliance; any complexity beyond the principles above must be justified in the PR.
 
-**Version**: 1.9.0 | **Ratified**: 2026-11-17 | **Last Amended**: 2026-11-18
+**Version**: 1.10.0 | **Ratified**: 2026-11-17 | **Last Amended**: 2026-11-18
 
 ## Change Log
 
+- **1.10.0 (2026-11-18)** — MINOR: live figures explained for real. Every figure (contribution,
+  % of own salary, the three leftover lines, left of shared plan, settle-up, plan split bar vs
+  coverage bar, fairness line) now has a plain caption plus a tooltip with 2–3 plain sentences
+  AND a worked mini example computed live from the current draft (salaries, plan, spending so
+  far), in en+pl with placeholder parity. Same explanations in the close summary dialog and
+  History. Guarded by ui-static tests (58/58 pass).
 - **1.9.0 (2026-11-18)** — MINOR: plain-language labels + delayed tooltip mechanism
   (Principle X addition). Every visible label/field/header/caption/button/hint/badge/empty
   state now has a short plain label (max ~4 words) plus a tooltip: label text is the trigger,
