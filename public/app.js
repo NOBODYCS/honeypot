@@ -118,7 +118,7 @@ const I18N = {
     tipPersonalObligatory: 'Personal expenses of this partner. They reduce only their own leftover; the other partner can chip in a % per item.',
     tipMonthPlan: 'Everything planned for this month: salaries, shared costs, personal costs. Every edit saves automatically.',
     tipLiveFigures: 'The money picture of this month, recomputed live while you edit the plan or log expenses.',
-    tipSpendingLog: 'Every expense logged this month. Link it to a planned item or leave it unplanned, and pick who paid.',
+    tipSpendingLog: 'Every expense logged this month: category, what for, amount, and who paid. Typing a new category name saves it to Settings.',
     tipLabel: 'Name of this item.',
     tipAmount: 'Amount in the app currency, e.g. 120.50. Type digits and one decimal separator.',
     tipPartnerShare: '{name} chips in this % of this personal cost. It appears as its own line in the month summary and never changes the shared split.',
@@ -285,7 +285,7 @@ const I18N = {
     tipPersonalObligatory: 'Wydatki osobiste tej osoby. Obniżają tylko jej własne wolne środki; druga osoba może dołożyć się procentem od pozycji.',
     tipMonthPlan: 'Wszystko zaplanowane na ten miesiąc: pensje, koszty wspólne, osobiste. Każda zmiana zapisuje się automatycznie.',
     tipLiveFigures: 'Obraz pieniędzy na ten miesiąc — przeliczany na bieżąco podczas edycji planu i rejestrowania wydatków.',
-    tipSpendingLog: 'Każdy wydatek zarejestrowany w tym miesiącu. Powiąż go z zaplanowaną pozycją albo zostaw pozaplanowy i wybierz, kto zapłacił.',
+    tipSpendingLog: 'Każdy wydatek zarejestrowany w tym miesiącu: kategoria, opis, kwota i kto zapłacił. Nowa nazwa kategorii zapisze się w Ustawieniach.',
     tipLabel: 'Nazwa tej pozycji.',
     tipAmount: 'Kwota w walucie aplikacji, np. 120,50. Wpisuj cyfry i jeden przecinek lub kropkę.',
     tipPartnerShare: '{name} dokłada ten % tej osobistej pozycji. Pokazuje się jako osobna linia w podsumowaniu miesiąca i nigdy nie zmienia podziału wspólnego.',
@@ -1164,21 +1164,33 @@ function scheduleAutosave() {
 async function autosave() {
   if (!state.month || !editable()) return;
   const all = state.draft.items;
-  const items = all
-    .filter((i) => i.label.trim() && i.amountCents > 0)
-    .map((i) => ({
-      id: i.id ?? null,
-      kind: i.kind,
-      label: i.label,
-      amountCents: i.amountCents,
-      ownerProfileId: i.ownerProfileId,
-      partnerSharePct: i.partnerSharePct ?? -1,
-    }));
+  const sent = all.filter((i) => i.label.trim() && i.amountCents > 0);
+  const prevServerIds = new Set(state.month.items.map((i) => i.id));
+  const items = sent.map((i) => ({
+    id: i.id ?? null,
+    kind: i.kind,
+    label: i.label,
+    amountCents: i.amountCents,
+    ownerProfileId: i.ownerProfileId,
+    partnerSharePct: i.partnerSharePct ?? -1,
+  }));
   try {
     state.month = await api('PUT', `/api/months/${state.month.ym}/plan`, {
       salaries: state.draft.salaries,
       items,
     });
+    /* Sync the server-assigned ids back into the draft so the next save upserts in place
+       instead of delete+re-inserting the row (id-preserving saves; expense links survive). */
+    const fresh = state.month.items.filter((r) => !prevServerIds.has(r.id)).map((r) => r.id);
+    const freshSet = new Set(fresh);
+    const nextIds = new Set(state.month.items.map((i) => i.id));
+    let k = 0;
+    for (const ref of sent) {
+      if (ref.id == null && k < fresh.length) ref.id = fresh[k++];
+    }
+    for (const i of all) {
+      if (!sent.includes(i) && i.id != null && (!nextIds.has(i.id) || freshSet.has(i.id))) i.id = null;
+    }
     setSaveState(items.length === all.length ? t('saved') : t('savedSkipped', { n: all.length - items.length }));
   } catch (err) {
     setSaveState(t('error'));
@@ -1267,7 +1279,7 @@ function figTipParams(s, p, names) {
     combined: fmtMoney(s.combinedIncome),
     plan: fmtMoney(s.sharedPlannedTotal),
     amount: fmtMoney(s.contributions[p]),
-    pct: `${pct(s.contributions[p], s.salaries[p])}%`,
+    pct: pct(s.contributions[p], s.salaries[p]),
     fixed: fmtMoney(s.fixedShare[p]),
     personal: fmtMoney(s.personalOut[p]),
     prev: fmtMoney(s.leftAfterShared?.[p] ?? s.projectedLeft?.[p] ?? 0),
@@ -1371,6 +1383,7 @@ function renderExpenses() {
     const submit = async () => {
       const category = catInput.value.trim();
       const payload = {
+        date: editing?.date ?? defDate,
         category,
         description: descInput.value,
         amountCents: parseMoney(amountInput.value),

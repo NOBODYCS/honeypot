@@ -395,3 +395,21 @@ test('PUT /api/settings dedupes and trims categories; ApiError carries codes', a
     (e) => e.status === 400 && e.code === 'invalid'
   );
 });
+
+test('bugfix 003: plan PUT is atomic — a rollback of the item transaction also rolls back salaries', async () => {
+  await call('POST', '/api/months', { ym: '2026-11' });
+  await call('PUT', '/api/months/2026-11/plan', {
+    salaries: { 1: 100, 2: 200 },
+    items: [{ kind: 'fixed', label: 'Rent', amountCents: 5000 }],
+  });
+  db.exec("CREATE TRIGGER boom BEFORE UPDATE ON plan_items BEGIN SELECT RAISE(ABORT, 'boom'); END");
+  await assert.rejects(() =>
+    call('PUT', '/api/months/2026-11/plan', {
+      salaries: { 1: 999, 2: 888 },
+      items: [{ id: 1, kind: 'fixed', label: 'Rent', amountCents: 6000 }],
+    })
+  );
+  const { body } = await call('GET', '/api/months/2026-11');
+  assert.deepEqual(body.salaries, { 1: 100, 2: 200 });
+  assert.equal(body.items[0].amountCents, 5000);
+});

@@ -341,13 +341,15 @@ export function createApi(db) {
       throw new ApiError(400, 'items must be an array', 'invalid');
     }
     for (const item of items) validatePlanItem(item);
-    putSalaries(db, month.ym, salaries);
     const existing = monthPlanItems(db, month.id);
     const existingIds = new Set(existing.map((r) => r.id));
     /* Upsert by id so expenses.plan_item_id FKs survive plan edits; removed items
-       orphan their expenses (plan_item_id = NULL) instead of failing the FK. */
+       orphan their expenses (plan_item_id = NULL) instead of failing the FK.
+       Salaries are written inside the same transaction so a rollback cannot leave
+       a partial write. */
     db.exec('BEGIN');
     try {
+      putSalaries(db, month.ym, salaries);
       const keep = new Set();
       const upsert = db.prepare(
         'UPDATE plan_items SET kind = ?, label = ?, amount_cents = ?, owner_profile_id = ?, partner_share_pct = ? WHERE id = ? AND month_id = ?'
