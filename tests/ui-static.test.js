@@ -457,3 +457,17 @@ test('chrome/a11y: header save indicator, balance hidden at zero, label-wrapped 
   assert.ok(/\.personal-row input\.num-input\s*\{[^}]*min-width/.test(css), 'money inputs must be able to grow (no clipped amounts)');
   assert.ok(api.includes('seenCats'), 'categories must be deduped server-side');
 });
+
+test('bugfix 003 guards: expense payload sends date; autosave syncs server ids back; no %% in tip params; spending-log tip matches 2.1', () => {
+  /* B1: the server requires a date within the month — the UI payload must send it */
+  assert.ok(/date:\s*editing\?\.date \?\? defDate/.test(app), 'expense payload must include date (editing date on edit, today-clamped defDate on add)');
+  /* B2: after a successful plan PUT the draft must learn the server-assigned ids */
+  const as = app.slice(app.indexOf('async function autosave'), app.indexOf('\nfunction ', app.indexOf('async function autosave') + 1));
+  assert.ok(as.includes('prevServerIds') && as.includes('ref.id = fresh'), 'autosave must sync server-assigned ids back into draft items (id-preserving upserts)');
+  /* B3: tip templates print the % themselves — params must not carry another one */
+  const ftp = app.slice(app.indexOf('function figTipParams'), app.indexOf('\nfunction ', app.indexOf('function figTipParams') + 1));
+  assert.ok(!/pct:\s*`[^`]*%/.test(ftp), 'figTipParams pct must be a bare number (tipOfIncome template already prints %)');
+  /* B4: 2.1 removed the planned-item link from the spending log — the tooltip must not mention it */
+  const { en, pl } = i18n();
+  assert.ok(!/planned item|zaplanowan/i.test(`${en.tipSpendingLog} ${pl.tipSpendingLog}`), 'tipSpendingLog must not mention planned-item links (removed in 2.1)');
+});
